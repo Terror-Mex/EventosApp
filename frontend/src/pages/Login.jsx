@@ -150,13 +150,6 @@ const Login = () => {
                         </div>
                     </form>
 
-                    <div className="mt-6 border-t border-gray-100 pt-6">
-                        <p className="text-xs text-center text-gray-500">
-                            Cuentas demo:<br />
-                            Admin: <span className="font-semibold text-gray-700">admin@eventpro.com / admin123</span><br />
-                            Worker: <span className="font-semibold text-gray-700">carlos@eventpro.com / worker123</span>
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
