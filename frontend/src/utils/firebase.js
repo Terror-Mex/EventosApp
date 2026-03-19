@@ -1,0 +1,64 @@
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import api from "../api/axios";
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
+export const requestNotificationPermissionAndSaveToken = async (endpoint = '/worker/fcm-token') => {
+  try {
+    console.log("Iniciando solicitud de permisos de notificaciones...");
+    const permission = await Notification.requestPermission();
+    console.log("Respuesta del usuario al permiso:", permission);
+    
+    if (permission === "granted") {
+      console.log("Permiso concedido. Registrando Service Worker...");
+      
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log("Service Worker registrado con éxito:", registration.scope);
+
+      console.log("Obteniendo token de FCM...");
+      const token = await getToken(messaging, { 
+        serviceWorkerRegistration: registration,
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+      });
+      
+      if (token) {
+        console.log("🎉 FCM Token Obtenido Exitosamente:", token);
+        try {
+            await api.post(endpoint, { token });
+            console.log("Token guardado en el backend.");
+        } catch(e) {
+            console.error("Error al guardar token en el backend:", e);
+        }
+      } else {
+        console.warn("No se pudo obtener el token de registro. Asegúrate de tener los certificados VAPID configurados si Firebase lo exige.");
+      }
+    } else {
+      console.warn("El usuario denegó el permiso para notificaciones.");
+    }
+  } catch (error) {
+    console.error("Error crítico durante la configuración de notificaciones:", error);
+  }
+};
+
+export const setupForegroundMessages = () => {
+    return onMessage(messaging, (payload) => {
+        console.log('Mensaje recibido en primer plano: ', payload);
+        const { title, body } = payload.notification;
+        
+        // Cuando tienes la pestaña abierta frente a ti, es mejor mostrar una alerta 
+        // interna dentro de la App, en lugar de invocar una notificación del Sistema 
+        // Operativo (Windows), esto evita que se lancen dos cuadros al mismo tiempo.
+        alert(`🔔 NUEVA NOTIFICACIÓN:\n\n${title}\n${body}`);
+    });
+};

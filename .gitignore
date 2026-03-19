@@ -1,0 +1,56 @@
+# === General ===
+.DS_Store
+Thumbs.db
+*.log
+*.sqlite
+*.class
+*.iml
+
+# === Monorepo / Environment ===
+.env
+.env.*
+!.env.example
+*.env
+backend/.env
+frontend/.env
+firebase-adminsdk.json
+backend/src/main/resources/firebase-adminsdk.json
+
+# === Backend (Spring Boot / Maven) ===
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/uploads/
+backend/logs/
+backend/*.log
+backend/hs_err_pid*
+
+# === Frontend (React / Vite / NPM) ===
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+frontend/.npm
+frontend/.eslintcache
+frontend/.stylelintcache
+frontend/.vite
+frontend/coverage/
+
+# === IDEs and Editors ===
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# === Temporary & System Files ===
+/tmp/
+*.tmp
+*.bak
+*~
+
+# === Tests / Scripts ===
+test_*.py
+test_*.js
+test_*.ps1
+update_*.py
+coverage/
+.nyc_output/
