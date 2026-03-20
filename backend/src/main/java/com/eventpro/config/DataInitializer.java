@@ -25,7 +25,7 @@ public class DataInitializer {
                                       PasswordEncoder passwordEncoder) {
         return args -> {
             // Solo crear el admin semilla si no existe ningún usuario en la BD
-            if (userRepository.count() == 0) {
+            if (userRepository.findByEmail(adminEmail).isEmpty()) {
                 User admin = new User();
                 admin.setNombre(adminNombre);
                 admin.setEmail(adminEmail);
