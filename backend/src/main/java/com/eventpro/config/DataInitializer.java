@@ -24,23 +24,37 @@ public class DataInitializer {
     public CommandLineRunner initData(UserRepository userRepository,
                                       PasswordEncoder passwordEncoder) {
         return args -> {
-            // Solo crear el admin semilla si no existe ningún usuario en la BD
-            if (userRepository.findByEmail(adminEmail).isEmpty()) {
+            String safeEmail = adminEmail.trim();
+            String safePassword = adminPassword.trim();
+            // Buscar el admin semilla por email
+            var adminOpt = userRepository.findByEmail(safeEmail);
+            
+            if (adminOpt.isEmpty()) {
+                // Crear desde cero
                 User admin = new User();
                 admin.setNombre(adminNombre);
-                admin.setEmail(adminEmail);
-                admin.setPassword(passwordEncoder.encode(adminPassword));
+                admin.setEmail(safeEmail);
+                admin.setPassword(passwordEncoder.encode(safePassword));
                 admin.setRol("ADMIN");
                 admin.setTelefono("");
                 admin.setPuesto("Administrador");
                 admin.setActivo(true);
-
                 userRepository.save(admin);
+                
                 System.out.println("===========================================");
-                System.out.println("  ADMIN SEMILLA CREADO EXITOSAMENTE");
-                System.out.println("  Email: " + adminEmail);
-                System.out.println("  Password: " + adminPassword);
-                System.out.println("  ¡Cambia la contraseña después del primer login!");
+                System.out.println("  ADMIN SEMILLA CREADO (NUEVO)");
+                System.out.println("  Email: " + safeEmail);
+                System.out.println("===========================================");
+            } else {
+                // Si ya existe, FORZAR la actualización del password y nombre por si cambiaron en Railway
+                User admin = adminOpt.get();
+                admin.setNombre(adminNombre);
+                admin.setPassword(passwordEncoder.encode(safePassword));
+                userRepository.save(admin);
+                
+                System.out.println("===========================================");
+                System.out.println("  ADMIN SEMILLA ACTUALIZADO (EXISTENTE)");
+                System.out.println("  Password sincronizado con tus variables de entorno");
                 System.out.println("===========================================");
             }
         };
