@@ -33,7 +33,10 @@ export const requestNotificationPermissionAndSaveToken = async (endpoint = '/wor
       });
       
       if (token) {
-        console.log("🎉 FCM Token Obtenido Exitosamente:", token);
+        console.log("\n\n===============================================");
+        console.log("🔴 ATENCIÓN: TU TOKEN FCM FRESCO ES EL SIGUIENTE:");
+        console.log(token);
+        console.log("===============================================\n\n");
         try {
             await api.post(endpoint, { token });
             console.log("Token guardado en el backend.");

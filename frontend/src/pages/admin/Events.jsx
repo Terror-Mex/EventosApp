@@ -620,8 +620,7 @@ const AdminEvents = () => {
                                         });
                                     }}
                                     options={{
-                                        types: ['establishment', 'geocode'],
-                                        componentRestrictions: { country: "mx" } // 👈 Restringe la búsqueda a México
+                                        componentRestrictions: { country: "mx" } 
                                     }}
                                     className="input-field w-full"
                                     required
