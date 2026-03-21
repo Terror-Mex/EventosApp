@@ -15,6 +15,11 @@ import java.io.InputStream;
 @Configuration
 public class FirebaseConfig {
 
+    // Variable para Railway: El contenido completo del archivo JSON pegado aquí
+    @Value("${FIREBASE_CREDENTIALS:#{null}}")
+    private String firebaseCredentialsJson;
+
+    // Respaldo para desarrollo local
     @Value("${FIREBASE_CREDENTIALS_PATH:classpath:firebase-adminsdk.json}")
     private String credentialsPath;
 
@@ -23,11 +28,20 @@ public class FirebaseConfig {
         try {
             if (FirebaseApp.getApps().isEmpty()) {
                 InputStream serviceAccount;
-                if (credentialsPath.startsWith("classpath:")) {
+
+                // Prioridad 1: Leer el JSON directo de la variable de entorno de Railway
+                if (firebaseCredentialsJson != null && !firebaseCredentialsJson.trim().isEmpty()) {
+                    serviceAccount = new java.io.ByteArrayInputStream(
+                            firebaseCredentialsJson.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                    );
+                } 
+                // Prioridad 2: Leer de un archivo (rutas o classpath para el viejo desarrollo local)
+                else if (credentialsPath.startsWith("classpath:")) {
                     serviceAccount = new ClassPathResource(credentialsPath.substring(10)).getInputStream();
                 } else {
                     serviceAccount = new FileInputStream(credentialsPath);
                 }
+
                 FirebaseOptions options = FirebaseOptions.builder()
                         .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                         .build();
