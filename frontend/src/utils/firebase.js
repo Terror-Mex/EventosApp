@@ -61,10 +61,15 @@ export const setupForegroundMessages = () => {
         const title = payload.notification?.title || payload.data?.title || 'EventPro Notificación';
         const body = payload.notification?.body || payload.data?.body || 'Tienes un nuevo mensaje';
         
-        // Disparar una notificación nativa estándar en lugar de un alert bloqueable
+        // Disparar una notificación nativa estándar de forma robusta a través del Service Worker
         if (Notification.permission === 'granted') {
-            new Notification(title, {
-                body: body
+            navigator.serviceWorker.ready.then((registration) => {
+                registration.showNotification(title, {
+                    body: body
+                });
+            }).catch(error => {
+                console.error("Error disparando push en móvil:", error);
+                alert(`🔔 ${title}\n${body}`); // Respaldo agresivo
             });
         } else {
             // Fallback si por alguna extraña razón los permisos están intermedios
