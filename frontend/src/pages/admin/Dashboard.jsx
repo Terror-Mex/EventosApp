@@ -11,18 +11,6 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Initialize FCM for Admin device to receive reports/check-in pushes
-        requestNotificationPermissionAndSaveToken('/admin/fcm-token');
-        const unsubscribe = setupForegroundMessages();
-
-        return () => {
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 const [statsRes, eventsRes] = await Promise.all([

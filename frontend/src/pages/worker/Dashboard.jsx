@@ -28,19 +28,6 @@ const WorkerDashboard = () => {
     };
 
     useEffect(() => {
-        // Initialize FCM
-        requestNotificationPermissionAndSaveToken();
-        const unsubscribe = setupForegroundMessages();
-
-        // Cleanup the listener to prevent duplications caused by React Strict Mode
-        return () => {
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 const [statsRes, eventsRes] = await Promise.all([

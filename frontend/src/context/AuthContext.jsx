@@ -27,6 +27,23 @@ export const AuthProvider = ({ children }) => {
         initAuth();
     }, []);
 
+    // Escucha de notificaciones a nivel global para que nunca se "caigan" cuando cambies de página
+    useEffect(() => {
+        if (!user) return; // Sólo escuchar si hay un usuario logueado
+        
+        // Importar dinámicamente para no bloquear el renderizado inicial de la app
+        import('../utils/firebase').then(({ requestNotificationPermissionAndSaveToken, setupForegroundMessages }) => {
+            const endpoint = user.rol === 'ADMIN' ? '/admin/fcm-token' : '/worker/fcm-token';
+            requestNotificationPermissionAndSaveToken(endpoint);
+            
+            const unsubscribe = setupForegroundMessages();
+            return () => {
+                if (unsubscribe) unsubscribe();
+            };
+        }).catch(err => console.error("Firebase not loaded: ", err));
+        
+    }, [user]);
+
     const login = async (email, password) => {
         const response = await api.post('/auth/login', { email, password });
         const { token, user: userData } = response.data;
