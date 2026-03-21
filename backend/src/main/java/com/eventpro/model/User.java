@@ -35,5 +35,6 @@ public class User {
     @Column(nullable = false)
     private boolean activo = true;
 
+    @Column(length = 1000)
     private String fcmToken;
 }
