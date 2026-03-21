@@ -53,12 +53,20 @@ export const requestNotificationPermissionAndSaveToken = async (endpoint = '/wor
 
 export const setupForegroundMessages = () => {
     return onMessage(messaging, (payload) => {
-        console.log('Mensaje recibido en primer plano: ', payload);
-        const { title, body } = payload.notification;
+        console.log('🔔 Mensaje crudo recibido en primer plano: ', payload);
         
-        // Cuando tienes la pestaña abierta frente a ti, es mejor mostrar una alerta 
-        // interna dentro de la App, en lugar de invocar una notificación del Sistema 
-        // Operativo (Windows), esto evita que se lancen dos cuadros al mismo tiempo.
-        alert(`🔔 NUEVA NOTIFICACIÓN:\n\n${title}\n${body}`);
+        const title = payload.notification?.title || payload.data?.title || 'EventPro Notificación';
+        const body = payload.notification?.body || payload.data?.body || 'Tienes un nuevo mensaje';
+        
+        // Disparar una notificación nativa estándar en lugar de un alert bloqueable
+        if (Notification.permission === 'granted') {
+            new Notification(title, {
+                body: body,
+                icon: '/eventpro-icon.svg'
+            });
+        } else {
+            // Fallback si por alguna extraña razón los permisos están intermedios
+            alert(`🔔 ${title}\n${body}`);
+        }
     });
 };
