@@ -20,3 +20,13 @@ messaging.onBackgroundMessage((payload) => {
   // 'notification' dentro del payload, por tanto si la ejecutamos manualmente aquí,
   // se duplicará la alerta visual para el usuario.
 });
+
+// Forzar al Service Worker a tomar el control inmediatamente para evitar que 
+// versiones viejas se queden "trabadas" esperando que el usuario cierre todas las pestañas.
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
