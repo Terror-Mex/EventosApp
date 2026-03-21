@@ -64,8 +64,7 @@ export const setupForegroundMessages = () => {
         // Disparar una notificación nativa estándar en lugar de un alert bloqueable
         if (Notification.permission === 'granted') {
             new Notification(title, {
-                body: body,
-                icon: '/apple-touch-icon.png'
+                body: body
             });
         } else {
             // Fallback si por alguna extraña razón los permisos están intermedios

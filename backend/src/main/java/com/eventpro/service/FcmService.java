@@ -25,7 +25,6 @@ public class FcmService {
                             .setNotification(com.google.firebase.messaging.WebpushNotification.builder()
                                     .setTitle(title)
                                     .setBody(body)
-                                    .setIcon("/apple-touch-icon.png") // PNG Obligatorio para Android, los SVG rompen la bandeja nativa
                                     .build())
                             .putHeader("Urgency", "high")
                             .build())
