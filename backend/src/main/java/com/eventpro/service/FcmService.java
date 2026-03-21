@@ -20,6 +20,15 @@ public class FcmService {
                             .setTitle(title)
                             .setBody(body)
                             .build())
+                    // Configuración específica de Web para forzar entrega en el navegador
+                    .setWebpushConfig(com.google.firebase.messaging.WebpushConfig.builder()
+                            .setNotification(com.google.firebase.messaging.WebpushNotification.builder()
+                                    .setTitle(title)
+                                    .setBody(body)
+                                    .setIcon("/eventpro-icon.svg") // tu nuevo icono de PWA
+                                    .build())
+                            .putHeader("Urgency", "high")
+                            .build())
                     .build();
 
             String response = FirebaseMessaging.getInstance().send(message);
