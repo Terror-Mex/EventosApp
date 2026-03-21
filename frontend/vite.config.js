@@ -20,7 +20,7 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        gcm_sender_id: '103953800507', // Identificador universal de Google Cloud Messaging (es estrictamente requerido por Android Chrome)
+        gcm_sender_id: '103953800528', // Cambiado bajo instrucción directa
         icons: [
           {
             src: '/eventpro-icon.svg',
@@ -31,6 +31,11 @@ export default defineConfig({
             src: '/eventpro-icon.svg',
             sizes: '512x512',
             type: 'image/svg+xml'
+          },
+          {
+            src: '/apple-touch-icon.png', // Fallback universal imperativo para Android nativo
+            sizes: '192x192',
+            type: 'image/png'
           },
           {
             src: '/eventpro-icon.svg',

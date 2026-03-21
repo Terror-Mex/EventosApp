@@ -65,7 +65,7 @@ export const setupForegroundMessages = () => {
         if (Notification.permission === 'granted') {
             new Notification(title, {
                 body: body,
-                icon: '/eventpro-icon.svg'
+                icon: '/apple-touch-icon.png'
             });
         } else {
             // Fallback si por alguna extraña razón los permisos están intermedios
