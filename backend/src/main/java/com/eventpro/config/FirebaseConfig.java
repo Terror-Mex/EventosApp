@@ -31,10 +31,14 @@ public class FirebaseConfig {
 
                 // Prioridad 1: Leer el JSON directo de la variable de entorno de Railway
                 if (firebaseCredentialsJson != null && !firebaseCredentialsJson.trim().isEmpty()) {
+                    // Muchos servicios en la nube (incluido Railway) escapan los saltos de línea (\n) del private_key
+                    // convirtiéndolos en dobles diagonales invertidas (\\n). Aquí lo corregimos forzosamente:
+                    String processedJson = firebaseCredentialsJson.replace("\\n", "\n");
+                    
                     serviceAccount = new java.io.ByteArrayInputStream(
-                            firebaseCredentialsJson.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                            processedJson.getBytes(java.nio.charset.StandardCharsets.UTF_8)
                     );
-                } 
+                }
                 // Prioridad 2: Leer de un archivo (rutas o classpath para el viejo desarrollo local)
                 else if (credentialsPath.startsWith("classpath:")) {
                     serviceAccount = new ClassPathResource(credentialsPath.substring(10)).getInputStream();
