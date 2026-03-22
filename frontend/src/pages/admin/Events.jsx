@@ -6,7 +6,7 @@ import { CheckSquare, Image as ImageIcon } from 'lucide-react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { es } from 'date-fns/locale/es';
-import Autocomplete from 'react-google-autocomplete';
+import NewPlaceAutocomplete from '../../components/NewPlaceAutocomplete';
 
 registerLocale('es', es);
 
@@ -607,26 +607,19 @@ const AdminEvents = () => {
 
                             <div>
                                 <label className="label">Ubicación</label>
-                                <Autocomplete
-                                    apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+                                <NewPlaceAutocomplete
+                                    value={eventForm.ubicacion}
                                     onPlaceSelected={(place) => {
-                                        const lat = place.geometry?.location?.lat() || null;
-                                        const lng = place.geometry?.location?.lng() || null;
-                                        setEventForm({ 
-                                            ...eventForm, 
-                                            ubicacion: place.formatted_address || place.name || '',
-                                            latitud: lat,
-                                            longitud: lng 
+                                        setEventForm({
+                                            ...eventForm,
+                                            ubicacion: place.address || '',
+                                            latitud: place.lat || null,
+                                            longitud: place.lng || null
                                         });
                                     }}
-                                    options={{
-                                        componentRestrictions: { country: "mx" } 
-                                    }}
                                     className="input-field w-full"
-                                    required
-                                    value={eventForm.ubicacion}
-                                    onChange={(e) => setEventForm({ ...eventForm, ubicacion: e.target.value, latitud: null, longitud: null })}
-                                    placeholder="Buscar dirección o nombre del lugar..."
+                                    required={true}
+                                    placeholder="Buscar dirección o nombre del lugar (Ej. México)..."
                                 />
                             </div>
 
