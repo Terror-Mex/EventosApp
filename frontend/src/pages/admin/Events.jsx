@@ -80,6 +80,7 @@ const AdminEvents = () => {
         if (event) {
             let parsedCabinas = [{ tipo: event.cabina || 'Media cabina', cant: event.cantCabina || 1 }];
             try { if (event.cabina?.startsWith('[')) parsedCabinas = JSON.parse(event.cabina); } catch (e) { }
+            parsedCabinas = parsedCabinas.map(c => c.tipo === 'cabina completa' ? { ...c, tipo: 'Cabina completa' } : c);
 
             let parsedReceptores = [{ tipo: event.receptores || 'normales', cant: event.cantReceptores || 50 }];
             try { if (event.receptores?.startsWith('[')) parsedReceptores = JSON.parse(event.receptores); } catch (e) { }
@@ -643,11 +644,11 @@ const AdminEvents = () => {
                                                         setEventForm({ ...eventForm, cabinaList: newCabinas });
                                                     }}>
                                                         <option value="Media cabina">Media cabina</option>
-                                                        <option value="cabina completa">cabina completa</option>
+                                                        <option value="Cabina completa">Cabina completa</option>
                                                     </select>
                                                 </div>
                                                 <div className="w-20">
-                                                    <input type="number" min="1" className="input-field" value={cab.cant} onChange={(e) => {
+                                                    <input type="number" min="0" className="input-field" value={cab.cant} onChange={(e) => {
                                                         const newCabinas = (eventForm.cabinaList || []).map((c, i) => i === index ? { ...c, cant: parseInt(e.target.value) || 0 } : c);
                                                         setEventForm({ ...eventForm, cabinaList: newCabinas });
                                                     }} />
@@ -683,7 +684,7 @@ const AdminEvents = () => {
                                                     </select>
                                                 </div>
                                                 <div className="w-20">
-                                                    <input type="number" min="1" className="input-field" value={rec.cant} onChange={(e) => {
+                                                    <input type="number" min="0" className="input-field" value={rec.cant} onChange={(e) => {
                                                         const newRec = (eventForm.receptoresList || []).map((r, i) => i === index ? { ...r, cant: parseInt(e.target.value) || 0 } : r);
                                                         setEventForm({ ...eventForm, receptoresList: newRec });
                                                     }} />
