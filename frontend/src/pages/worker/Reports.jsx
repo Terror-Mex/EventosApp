@@ -101,7 +101,9 @@ const WorkerReports = () => {
                         >
                             <option value="">-- Elige un evento --</option>
                             {events.map(ev => (
-                                <option key={ev.id} value={ev.id}>{ev.nombre} ({dayjs(ev.fechaInicio).format('DD/MMM/YYYY')})</option>
+                                <option key={ev.id} value={ev.id}>
+                                    {ev.numeroEvento ? `#${ev.numeroEvento} - ` : ''}{ev.nombre} ({dayjs(ev.fechaInicio).format('DD/MMM/YYYY')})
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -181,8 +183,15 @@ const WorkerReports = () => {
                         {reports.map((report) => (
                             <div key={report.id} className="card bg-white p-5 hover:border-gray-300 transition-colors">
                                 <div className="flex justify-between items-start mb-3">
-                                    <h3 className="font-bold text-gray-900">{report.event.nombre}</h3>
-                                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-gray-900">{report.event.nombre}</h3>
+                                        {report.event.numeroEvento && (
+                                            <span className="bg-gray-100 border border-gray-200 text-gray-600 text-[9px] px-1.5 py-0.5 rounded font-bold tracking-widest uppercase mt-0.5">
+                                                #{report.event.numeroEvento}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md ml-2 flex-shrink-0">
                                         {dayjs(report.fechaCreacion).format('DD MMM YYYY, HH:mm')}
                                     </span>
                                 </div>

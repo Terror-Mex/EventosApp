@@ -27,6 +27,7 @@ const AdminReports = () => {
 
     const filteredReports = reports.filter(r =>
         r.event.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.event.numeroEvento || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.contenido.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -63,8 +64,13 @@ const AdminReports = () => {
                                         <FileText size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-lg text-gray-900 border-b border-gray-100 pb-1 mb-1">
+                                        <h3 className="font-bold text-lg text-gray-900 border-b border-gray-100 pb-1 mb-1 flex items-center gap-2">
                                             Event: <span className="text-sidebar">{report.event.nombre}</span>
+                                            {report.event.numeroEvento && (
+                                                <span className="bg-gray-100 border border-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded font-bold tracking-widest uppercase">
+                                                    #{report.event.numeroEvento}
+                                                </span>
+                                            )}
                                         </h3>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600">
                                             <span className="flex items-center font-medium"><User size={14} className="mr-1.5 text-gray-400" /> {report.user.nombre}</span>
