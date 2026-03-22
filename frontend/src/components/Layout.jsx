@@ -95,11 +95,11 @@ const Layout = () => {
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Mobile Header */}
                 <header className="bg-white shadow-sm lg:hidden flex items-center justify-between p-4 z-10">
-                    <div className="text-xl font-bold flex items-center gap-2">
-                        <div className="bg-primary text-white p-1 rounded-md">
+                    <div className="text-xl font-bold flex items-center gap-2 text-sidebar">
+                        <div className="bg-sidebar text-primary p-1 rounded-md">
                             <CalendarDays size={20} />
                         </div>
-                        <span>Event<span className="text-primary">Pro</span></span>
+                        <span>Event<span className="font-black">Pro</span></span>
                     </div>
                     <button onClick={toggleMobileMenu} className="text-gray-600 hover:text-primary">
                         <Menu size={24} />

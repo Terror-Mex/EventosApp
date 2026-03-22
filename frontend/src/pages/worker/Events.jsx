@@ -204,7 +204,7 @@ const WorkerEvents = () => {
             {selectedEventId && (
                 <div className="w-full lg:w-3/4 h-full overflow-y-auto custom-scrollbar md:pl-4 p-2 pb-8">
                     <button
-                        className="lg:hidden text-primary font-medium mb-4 flex items-center"
+                        className="lg:hidden text-sidebar font-medium mb-4 flex items-center"
                         onClick={() => setSelectedEventId(null)}
                     >
                         ← Volver a la lista
