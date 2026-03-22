@@ -344,10 +344,15 @@ const WorkerEvents = () => {
                                                 hList = hList.filter(h => assignedDays.includes(h.fecha));
                                             }
 
-                                            return hList.map((h, i) => {
-                                                const currentCiList = eventDetails.checkIns || (eventDetails.checkIn ? [eventDetails.checkIn] : []);
-                                                const dayCi = currentCiList.find(c => c.fecha === h.fecha) || {};
-                                                const isToday = h.fecha === dayjs().format('YYYY-MM-DD');
+                                        return hList.map((h, i) => {
+                                            const normalizeDate = (d) => {
+                                                if (!d) return null;
+                                                if (Array.isArray(d)) return `${d[0]}-${d[1].toString().padStart(2, '0')}-${d[2].toString().padStart(2, '0')}`;
+                                                return d;
+                                            };
+                                            const currentCiList = eventDetails.checkIns || (eventDetails.checkIn ? [eventDetails.checkIn] : []);
+                                            const dayCi = currentCiList.find(c => normalizeDate(c.fecha) === normalizeDate(h.fecha)) || {};
+                                            const isToday = h.fecha === dayjs().format('YYYY-MM-DD');
 
                                                 return (
                                                     <div key={`w-asistencia-${i}`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">

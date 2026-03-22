@@ -1204,7 +1204,12 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                 {/* Detalles de Asistencia Vertical a Horizontal */}
                                                 <div className="w-full lg:flex-1 flex flex-col gap-3">
                                                     {hList.map((h, i) => {
-                                                        const ci = userCheckIns.find(c => c.fecha === h.fecha) || (userCheckIns.length === 1 && !userCheckIns[0].fecha ? userCheckIns[0] : null);
+                                                        const normalizeDate = (d) => {
+                                                            if (!d) return null;
+                                                            if (Array.isArray(d)) return `${d[0]}-${d[1].toString().padStart(2, '0')}-${d[2].toString().padStart(2, '0')}`;
+                                                            return d;
+                                                        };
+                                                        const ci = userCheckIns.find(c => normalizeDate(c.fecha) === normalizeDate(h.fecha)) || (userCheckIns.length === 1 && !userCheckIns[0].fecha ? userCheckIns[0] : null);
                                                         const isPast = dayjs(h.fecha).isBefore(dayjs(), 'day');
                                                         const noRegistro = isPast && !ci?.horaEntrada && !ci?.horaMontaje && !ci?.horaSalida;
 

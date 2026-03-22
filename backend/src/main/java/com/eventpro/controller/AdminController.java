@@ -473,9 +473,14 @@ public class AdminController {
 
     // Helper for automatic status
     private void updateEventStatus(Event event) {
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.ZoneId zone = java.time.ZoneId.of("America/Mexico_City");
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(zone);
         java.time.LocalDateTime start = java.time.LocalDateTime.of(event.getFechaInicio(), event.getHoraInicio());
         java.time.LocalDateTime end = java.time.LocalDateTime.of(event.getFechaFin(), event.getHoraFin());
+
+        if (end.isBefore(start)) {
+            end = end.plusDays(1);
+        }
 
         if (now.isBefore(start)) {
             event.setEstado("PENDIENTE");
