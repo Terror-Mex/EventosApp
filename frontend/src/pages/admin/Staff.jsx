@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Edit2, UserCheck, UserX, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, UserCheck, UserX, Trash2, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 
 const AdminStaff = () => {
     const { user: currentUser } = useAuth();
@@ -10,6 +10,7 @@ const AdminStaff = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [collapsedGroups, setCollapsedGroups] = useState({});
 
     const [form, setForm] = useState({
         nombre: '', email: '', password: '', rol: 'WORKER',
@@ -154,14 +155,18 @@ const AdminStaff = () => {
 
                                     return (
                                         <div key={groupName} className="contents">
-                                            <tr className="border-y border-gray-100">
-                                                <td colSpan="5" className={`px-6 py-3 font-black uppercase tracking-widest text-xs ${colorClass}`}>
+                                            <tr 
+                                                className="border-y border-gray-100 cursor-pointer hover:opacity-90 transition-opacity"
+                                                onClick={() => setCollapsedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }))}
+                                            >
+                                                <td colSpan="5" className={`px-6 py-3 font-black uppercase tracking-widest text-xs select-none ${colorClass}`}>
                                                     <div className="flex items-center">
+                                                        {collapsedGroups[groupName] ? <ChevronRight size={14} className="mr-1.5" /> : <ChevronDown size={14} className="mr-1.5" />}
                                                         {groupName} <span className="ml-2 bg-white/60 px-2 py-0.5 rounded text-[10px] tabular-nums">{users.length}</span>
                                                     </div>
                                                 </td>
                                             </tr>
-                                            {users.map((user) => (
+                                            {!collapsedGroups[groupName] && users.map((user) => (
                                                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${!user.activo ? 'opacity-60 bg-gray-50' : ''}`}>
                                                     <td className="px-6 py-4">
                                                         <p className="font-bold text-gray-900">{user.nombre}</p>
