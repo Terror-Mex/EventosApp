@@ -274,10 +274,20 @@ const AdminStaff = () => {
                                 </div>
                                 <div>
                                     <label className="label">Rol del Sistema</label>
-                                    <select className="input-field" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
+                                    <select
+                                        className={`input-field ${editingId === currentUser.id ? 'bg-gray-100 cursor-not-allowed opacity-70' : ''}`}
+                                        value={form.rol}
+                                        onChange={(e) => setForm({ ...form, rol: e.target.value })}
+                                        disabled={editingId === currentUser.id}
+                                    >
                                         <option value="WORKER">Trabajador</option>
                                         <option value="ADMIN">Administrador</option>
                                     </select>
+                                    {editingId === currentUser.id && (
+                                        <span className="text-[10px] text-red-500 font-bold block mt-1">
+                                            Por seguridad, no puedes cambiar tu propio rol.
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 

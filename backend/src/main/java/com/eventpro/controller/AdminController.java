@@ -283,7 +283,11 @@ public class AdminController {
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             }
-            user.setRol(userDetails.getRol());
+            if (id.equals(getCurrentUser().getId())) {
+                user.setRol("ADMIN"); // Nunca permitir perder los privilegios
+            } else {
+                user.setRol(userDetails.getRol());
+            }
             user.setTelefono(userDetails.getTelefono());
             user.setPuesto(userDetails.getPuesto());
             user.setActivo(userDetails.isActivo());
