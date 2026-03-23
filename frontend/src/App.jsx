@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import IosInstallBanner from './components/IosInstallBanner';
 
 // Pages
 import Login from './pages/Login';
@@ -19,6 +20,7 @@ import WorkerPayments from './pages/worker/Payments';
 function App() {
   return (
     <AuthProvider>
+      <IosInstallBanner />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
