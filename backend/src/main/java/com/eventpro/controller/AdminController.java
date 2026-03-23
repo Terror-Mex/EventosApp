@@ -224,7 +224,7 @@ public class AdminController {
             List<Assignment> currentAssignments = assignmentRepository.findByEvent(saved);
             for (Assignment asg : currentAssignments) {
                 if (asg.getUser().getFcmToken() != null && !asg.getUser().getFcmToken().isEmpty()) {
-                    fcmService.sendPushNotification(asg.getUser().getFcmToken(), "Evento Actualizado", "El evento " + saved.getNombre() + " ha sido modificado.");
+                    fcmService.sendPushNotification(asg.getUser().getFcmToken(), "Evento Actualizado", "El evento " + saved.getNombre() + " ha sido modificado.", "/worker/events");
                 }
             }
 
@@ -451,7 +451,7 @@ public class AdminController {
         
         // Notify the worker
         if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
-            fcmService.sendPushNotification(user.getFcmToken(), "Nueva Asignación", "Has sido asignado a un nuevo evento: " + event.getNombre());
+            fcmService.sendPushNotification(user.getFcmToken(), "Nueva Asignación", "Has sido asignado a un nuevo evento: " + event.getNombre(), "/worker/events");
         }
 
         return ResponseEntity.ok(savedAssignment);

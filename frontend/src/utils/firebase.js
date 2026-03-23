@@ -63,9 +63,12 @@ export const setupForegroundMessages = () => {
         
         // Disparar una notificación nativa estándar de forma robusta a través del Service Worker
         if (Notification.permission === 'granted') {
+            const urlToOpen = payload.fcmOptions?.link || payload.notification?.click_action || '/';
             navigator.serviceWorker.ready.then((registration) => {
                 registration.showNotification(title, {
-                    body: body
+                    body: body,
+                    icon: '/apple-touch-icon.png',
+                    data: { url: urlToOpen }
                 });
             }).catch(error => {
                 console.error("Error disparando push en móvil:", error);

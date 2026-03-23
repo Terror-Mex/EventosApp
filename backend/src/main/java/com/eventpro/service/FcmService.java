@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class FcmService {
 
-    public void sendPushNotification(String token, String title, String body) {
+    public void sendPushNotification(String token, String title, String body, String targetUrl) {
         if (token == null || token.isEmpty()) {
             return;
         }
@@ -25,8 +25,12 @@ public class FcmService {
                             .setNotification(com.google.firebase.messaging.WebpushNotification.builder()
                                     .setTitle(title)
                                     .setBody(body)
+                                    .setIcon("/apple-touch-icon.png")
                                     .build())
                             .putHeader("Urgency", "high")
+                            .setFcmOptions(com.google.firebase.messaging.WebpushFcmOptions.builder()
+                                    .setLink(targetUrl)
+                                    .build())
                             .build())
                     .build();
 

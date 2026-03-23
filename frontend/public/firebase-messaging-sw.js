@@ -30,3 +30,35 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+
+  let urlToOpen = '/';
+  if (event.notification.data && event.notification.data.url) {
+      urlToOpen = event.notification.data.url;
+  } else if (event.notification.data && event.notification.data.FCM_MSG && event.notification.data.FCM_MSG.fcmOptions) {
+      urlToOpen = event.notification.data.FCM_MSG.fcmOptions.link || '/';
+  }
+
+  if (!urlToOpen.startsWith('http')) {
+      const origin = self.location.origin;
+      urlToOpen = new URL(urlToOpen, origin).href;
+  }
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Si hay pestaña abierta, enfocar y navegar
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus().then(c => c.navigate(urlToOpen));
+        }
+      }
+      // Si la app está cerrada, abrir una nueva ventana PWA
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});

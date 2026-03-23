@@ -51,7 +51,7 @@ public class WorkerController {
         List<User> admins = userRepository.findByRol("ADMIN");
         for (User admin : admins) {
             if (admin.getFcmToken() != null && !admin.getFcmToken().isEmpty()) {
-                fcmService.sendPushNotification(admin.getFcmToken(), title, body);
+                fcmService.sendPushNotification(admin.getFcmToken(), title, body, "/admin/events");
             }
         }
     }
