@@ -73,7 +73,14 @@ const AdminDashboard = () => {
                             recentEvents.map(event => (
                                 <div key={event.id} className="p-6 hover:bg-gray-50 transition-colors flex justify-between items-center">
                                     <div>
-                                        <h3 className="font-bold text-gray-900">{event.nombre}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-gray-900">{event.nombre}</h3>
+                                            {event.numeroEvento && (
+                                                <span className="bg-gray-100 border border-gray-200 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold tracking-widest uppercase mt-0.5">
+                                                    #{event.numeroEvento}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-gray-500 mt-1">{dayjs(event.fechaInicio).format('DD/MM/YYYY')} al {dayjs(event.fechaFin).format('DD/MM/YYYY')} • {event.ubicacion}</p>
                                     </div>
                                     <span className={`px-3 py-1 text-xs rounded-full font-bold ${event.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' :
