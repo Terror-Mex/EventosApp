@@ -679,8 +679,8 @@ const AdminEvents = () => {
                                                         const newRec = (eventForm.receptoresList || []).map((r, i) => i === index ? { ...r, tipo: e.target.value } : r);
                                                         setEventForm({ ...eventForm, receptoresList: newRec });
                                                     }}>
-                                                        <option value="normales">normales</option>
-                                                        <option value="luminosos">luminosos</option>
+                                                        <option value="normales">Normales</option>
+                                                        <option value="luminosos">Luminosos</option>
                                                     </select>
                                                 </div>
                                                 <div className="w-20">
