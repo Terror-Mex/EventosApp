@@ -33,4 +33,7 @@ public class Assignment {
 
     @Column(columnDefinition = "TEXT")
     private String diasSeleccionados; // JSON array of dates: ["2026-03-10","2026-03-12"]
+
+    @Column(columnDefinition = "TEXT")
+    private String llegadasPorDia; // JSON map of date->time: {"2026-03-10":"07:00","2026-03-12":"08:00"}
 }

@@ -303,6 +303,15 @@ const AdminEvents = () => {
             return;
         }
         try {
+            const isMultiDay = assignForm.eventDays && assignForm.eventDays.length > 1;
+            // For multi-day: store per-day arrivals in horaLlegada as JSON and also as serialized
+            let resolvedHoraLlegada = assignForm.horaLlegada || null;
+            if (isMultiDay && assignForm.llegadasPorDia) {
+                // Use the first selected day's custom time as the "primary" for legacy display
+                const firstSelected = (assignForm.diasSeleccionados || [])[0];
+                resolvedHoraLlegada = (firstSelected && assignForm.llegadasPorDia[firstSelected]) || null;
+            }
+
             const payload = {
                 eventId: parseInt(assignForm.eventId),
                 userId: parseInt(assignForm.userId),
@@ -310,7 +319,8 @@ const AdminEvents = () => {
                 pagoAsignado: parseFloat(assignForm.pagoAsignado),
                 diasAsignados: assignForm.diasSeleccionados ? assignForm.diasSeleccionados.length : parseInt(assignForm.diasAsignados),
                 pagoExtras: parseFloat(assignForm.pagoExtras || 0),
-                horaLlegada: assignForm.horaLlegada || null,
+                horaLlegada: resolvedHoraLlegada,
+                llegadasPorDia: isMultiDay ? JSON.stringify(assignForm.llegadasPorDia || {}) : null,
                 diasSeleccionados: JSON.stringify(assignForm.diasSeleccionados || [])
             };
             await api.post('/admin/assignments', payload);
@@ -319,7 +329,7 @@ const AdminEvents = () => {
             const res = await api.get(`/admin/events/${assignForm.eventId}/assignments`);
             setEventAssignments(res.data);
 
-            setAssignForm({ ...assignForm, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', pagoExtras: 0, horaLlegada: '', diasSeleccionados: [...(assignForm.eventDays || [])] });
+            setAssignForm({ ...assignForm, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', pagoExtras: 0, horaLlegada: '', llegadasPorDia: {}, diasSeleccionados: [...(assignForm.eventDays || [])] });
             alert('Personal asignado exitosamente.');
         } catch (error) {
             console.error('Error assigning staff', error);
@@ -767,7 +777,7 @@ const AdminEvents = () => {
 
                             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                                 {/* Assign Form */}
-                                <div className="w-full md:w-1/3 p-6 border-r border-gray-100 bg-white overflow-y-auto">
+                                <div className="w-full md:w-2/5 p-6 border-r border-gray-100 bg-white overflow-y-auto">
                                     <h4 className="font-bold text-gray-800 mb-4">Nueva Asignación</h4>
                                     <form onSubmit={handleAssignSubmit} className="space-y-4">
                                         <div>
@@ -792,27 +802,40 @@ const AdminEvents = () => {
                                             {/* Day selection for multi-day events */}
                                             {assignForm.eventDays && assignForm.eventDays.length > 1 && (
                                                 <div>
-                                                    <label className="label">Días asignados</label>
+                                                    <label className="label">Días asignados y Hora Llegada</label>
                                                     <div className="space-y-1.5 mt-1">
                                                         {assignForm.eventDays.map((day) => {
                                                             const isChecked = assignForm.diasSeleccionados?.includes(day);
+                                                            const llegadaKey = `llegada_${day}`;
+                                                            const llegadaVal = assignForm.llegadasPorDia?.[day] || '';
                                                             return (
-                                                                <label key={day} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all text-sm ${
-                                                                    isChecked ? 'bg-primary/20 border-primary' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                                                }`}>
+                                                                <div key={day} className={`flex items-center gap-2 p-2 rounded-lg border transition-all text-sm ${isChecked ? 'bg-primary/20 border-primary' : 'bg-gray-50 border-gray-200'}`}>
+                                                                    <label className="flex items-center gap-2 flex-1 cursor-pointer">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={isChecked}
+                                                                            onChange={() => {
+                                                                                const updated = isChecked
+                                                                                    ? assignForm.diasSeleccionados.filter(d => d !== day)
+                                                                                    : [...(assignForm.diasSeleccionados || []), day];
+                                                                                setAssignForm({ ...assignForm, diasSeleccionados: updated, diasAsignados: updated.length });
+                                                                            }}
+                                                                            className="accent-primary"
+                                                                        />
+                                                                        <span className="font-semibold text-gray-800 text-xs">{dayjs(day).format('ddd DD/MM/YYYY')}</span>
+                                                                    </label>
                                                                     <input
-                                                                        type="checkbox"
-                                                                        checked={isChecked}
-                                                                        onChange={() => {
-                                                                            const updated = isChecked
-                                                                                ? assignForm.diasSeleccionados.filter(d => d !== day)
-                                                                                : [...(assignForm.diasSeleccionados || []), day];
-                                                                            setAssignForm({ ...assignForm, diasSeleccionados: updated, diasAsignados: updated.length });
+                                                                        type="time"
+                                                                        disabled={!isChecked}
+                                                                        value={llegadaVal}
+                                                                        title="Hora llegada ese día"
+                                                                        className={`input-field text-xs py-1 px-2 w-28 ${!isChecked ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                                                        onChange={(e) => {
+                                                                            const dias = { ...(assignForm.llegadasPorDia || {}), [day]: e.target.value };
+                                                                            setAssignForm({ ...assignForm, llegadasPorDia: dias });
                                                                         }}
-                                                                        className="accent-primary"
                                                                     />
-                                                                    <span className="font-semibold text-gray-800">{dayjs(day).format('ddd DD/MM/YYYY')}</span>
-                                                                </label>
+                                                                </div>
                                                             );
                                                         })}
                                                     </div>
@@ -831,13 +854,16 @@ const AdminEvents = () => {
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Extras (Opcional)</label>
+                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Pago Extra</label>
                                                     <input type="number" step="0.01" className="input-field text-sm" value={assignForm.pagoExtras} onChange={(e) => setAssignForm({ ...assignForm, pagoExtras: e.target.value })} />
                                                 </div>
-                                                <div>
-                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Hora Llegada a Evento</label>
-                                                    <input type="time" required className="input-field text-sm" title="Hora de llegada para este trabajador" value={assignForm.horaLlegada || ''} onChange={(e) => setAssignForm({ ...assignForm, horaLlegada: e.target.value })} />
-                                                </div>
+                                                {/* Show single Hora Llegada only for single-day events; multi-day has per-day */}
+                                                {(!assignForm.eventDays || assignForm.eventDays.length <= 1) && (
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Hora Llegada a Evento</label>
+                                                        <input type="time" required className="input-field text-sm" title="Hora de llegada para este trabajador" value={assignForm.horaLlegada || ''} onChange={(e) => setAssignForm({ ...assignForm, horaLlegada: e.target.value })} />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="bg-sidebar/5 p-4 rounded-lg text-sm border border-sidebar/10">
@@ -861,7 +887,7 @@ const AdminEvents = () => {
                                 </div>
 
                                 {/* Assignments List */}
-                                <div className="w-full md:w-2/3 bg-gray-50 p-6 overflow-y-auto">
+                                <div className="w-full md:w-3/5 bg-gray-50 p-6 overflow-y-auto">
                                     <h4 className="font-bold text-gray-800 mb-4">Personal Asignado ({eventAssignments.length})</h4>
 
                                     {eventAssignments.length === 0 ? (
@@ -1209,6 +1235,11 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                         const isPast = dayjs(h.fecha).isBefore(dayjs(), 'day');
                                                         const noRegistro = isPast && !ci?.horaEntrada && !ci?.horaMontaje && !ci?.horaSalida;
 
+                                                        // Resolve per-day arrival time
+                                                        let llegadasMap = {};
+                                                        try { llegadasMap = asg.llegadasPorDia ? JSON.parse(asg.llegadasPorDia) : {}; } catch(e) {}
+                                                        const horaLlegadaRow = llegadasMap[h.fecha] || asg.horaLlegada || event.horaLlegada || 'N/A';
+
                                                         return (
                                                             <div key={`ci-${i}`} className="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap gap-4 items-start lg:items-center justify-between bg-gray-50/50 p-3 rounded-xl border border-gray-100 relative">
                                                                 <div className="absolute -left-1.5 top-2 bottom-2 w-1 bg-gray-300 rounded-r-md"></div>
@@ -1235,12 +1266,12 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Hora Llegada</span>
                                                                         <div className="flex items-center text-red-500 font-black text-sm">
                                                                             <Clock size={14} className="mr-1.5" />
-                                                                            {asg.horaLlegada || event.horaLlegada || "N/A"}
+                                                                            {horaLlegadaRow}
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center text-red-500 font-black text-sm lg:hidden bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
                                                                         <Clock size={12} className="mr-1" />
-                                                                        {asg.horaLlegada || event.horaLlegada || "N/A"}
+                                                                        {horaLlegadaRow}
                                                                     </div>
                                                                 </div>
 

@@ -348,6 +348,7 @@ public class AdminController {
         Double pagoExtras = payload.containsKey("pagoExtras") ? Double.parseDouble(payload.get("pagoExtras").toString()) : 0.0;
         String diasSeleccionados = payload.containsKey("diasSeleccionados") ? payload.get("diasSeleccionados").toString() : null;
         String horaLlegada = payload.containsKey("horaLlegada") ? payload.get("horaLlegada").toString() : null;
+        String llegadasPorDia = payload.containsKey("llegadasPorDia") ? payload.get("llegadasPorDia").toString() : null;
 
         User user = userRepository.findById(userId).orElseThrow();
         Event event = eventRepository.findById(eventId).orElseThrow();
@@ -447,6 +448,7 @@ public class AdminController {
         assignment.setPagoAsignado(pagoAsignado);
         assignment.setDiasAsignados(diasAsignados);
         assignment.setPagoExtras(pagoExtras);
+        assignment.setLlegadasPorDia(llegadasPorDia);
         try {
             assignment.setDiasSeleccionados(mapper.writeValueAsString(newSelectedDays));
         } catch (Exception e) {
