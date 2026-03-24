@@ -70,7 +70,7 @@ const WorkerDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 <div className="card bg-gradient-to-br from-white to-gray-50 border-l-4 border-l-accent hover:-translate-y-1 transition-transform">
                     <div className="flex items-center">
                         <div className="p-3 rounded-full bg-accent/20 text-sidebar mr-4">

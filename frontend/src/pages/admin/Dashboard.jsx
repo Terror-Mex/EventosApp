@@ -54,10 +54,12 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 <StatCard title="Total Personal" value={stats.totalStaff} icon={Users} color="bg-accent" />
                 <StatCard title="Eventos Registrados" value={stats.totalEvents} icon={CalendarDays} color="bg-primary" />
-                <StatCard title="Reportes Recibidos" value={stats.totalReports} icon={FileText} color="bg-success" />
+                <div className="col-span-2 md:col-span-1">
+                    <StatCard title="Reportes Recibidos" value={stats.totalReports} icon={FileText} color="bg-success" />
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 mt-8">
