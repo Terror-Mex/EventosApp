@@ -41,7 +41,7 @@ const AdminEvents = () => {
     });
 
     const [assignForm, setAssignForm] = useState({
-        eventId: '', userId: '', rolAsignado: '', pagoAsignado: '', diasAsignados: 1, pagoExtras: 0
+        eventId: '', userId: '', rolAsignado: '', pagoAsignado: '', diasAsignados: 1, pagoExtras: 0, horaLlegada: ''
     });
     const [isUploading, setIsUploading] = useState(false);
 
@@ -281,7 +281,7 @@ const AdminEvents = () => {
         }
 
         setAssignForm({
-            eventId: event.id, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', diasAsignados: eventDays.length, pagoExtras: 0,
+            eventId: event.id, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', diasAsignados: eventDays.length, pagoExtras: 0, horaLlegada: '',
             eventDays: eventDays,
             diasSeleccionados: [...eventDays] // all days selected by default
         });
@@ -310,6 +310,7 @@ const AdminEvents = () => {
                 pagoAsignado: parseFloat(assignForm.pagoAsignado),
                 diasAsignados: assignForm.diasSeleccionados ? assignForm.diasSeleccionados.length : parseInt(assignForm.diasAsignados),
                 pagoExtras: parseFloat(assignForm.pagoExtras || 0),
+                horaLlegada: assignForm.horaLlegada || null,
                 diasSeleccionados: JSON.stringify(assignForm.diasSeleccionados || [])
             };
             await api.post('/admin/assignments', payload);
@@ -318,7 +319,7 @@ const AdminEvents = () => {
             const res = await api.get(`/admin/events/${assignForm.eventId}/assignments`);
             setEventAssignments(res.data);
 
-            setAssignForm({ ...assignForm, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', pagoExtras: 0, diasSeleccionados: [...(assignForm.eventDays || [])] });
+            setAssignForm({ ...assignForm, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', pagoExtras: 0, horaLlegada: '', diasSeleccionados: [...(assignForm.eventDays || [])] });
             alert('Personal asignado exitosamente.');
         } catch (error) {
             console.error('Error assigning staff', error);
@@ -835,9 +836,15 @@ const AdminEvents = () => {
                                                     <input type="number" step="0.01" className="input-field text-sm" required value={assignForm.pagoAsignado} onChange={(e) => setAssignForm({ ...assignForm, pagoAsignado: e.target.value })} />
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="label">Extras ($) <span className="text-[10px] text-gray-400 font-normal">(Viáticos, bonos, etc.)</span></label>
-                                                <input type="number" step="0.01" className="input-field text-sm" value={assignForm.pagoExtras} onChange={(e) => setAssignForm({ ...assignForm, pagoExtras: e.target.value })} />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Extras (Opcional)</label>
+                                                    <input type="number" step="0.01" className="input-field text-sm" value={assignForm.pagoExtras} onChange={(e) => setAssignForm({ ...assignForm, pagoExtras: e.target.value })} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Excepción Llegada</label>
+                                                    <input type="time" className="input-field text-sm" title="Sólo si llega a diferente hora del evento" value={assignForm.horaLlegada || ''} onChange={(e) => setAssignForm({ ...assignForm, horaLlegada: e.target.value })} />
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="bg-sidebar/5 p-4 rounded-lg text-sm border border-sidebar/10">
@@ -1112,7 +1119,10 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-bold text-gray-900">{asg.user.nombre}</p>
-                                                    <p className="text-[10px] text-gray-500 uppercase font-medium">{asg.rolAsignado} • {asg.diasAsignados} día(s)</p>
+                                                    <p className="text-[10px] text-gray-500 uppercase font-medium">
+                                                        {asg.rolAsignado} • {asg.diasAsignados} día(s)
+                                                        {asg.horaLlegada && <span className="text-red-500 font-bold ml-2">Llegada: {asg.horaLlegada}</span>}
+                                                    </p>
                                                     {asg.diasSeleccionados && (() => {
                                                         try {
                                                             const dias = JSON.parse(asg.diasSeleccionados);
@@ -1239,12 +1249,12 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Hora Llegada</span>
                                                                         <div className="flex items-center text-red-500 font-black text-sm">
                                                                             <Clock size={14} className="mr-1.5" />
-                                                                            {h.llegada || event.horaLlegada}
+                                                                            {asg.horaLlegada || h.llegada || event.horaLlegada}
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center text-red-500 font-black text-sm lg:hidden bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
                                                                         <Clock size={12} className="mr-1" />
-                                                                        {h.llegada || event.horaLlegada}
+                                                                        {asg.horaLlegada || h.llegada || event.horaLlegada}
                                                                     </div>
                                                                 </div>
 

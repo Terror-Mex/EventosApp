@@ -25,6 +25,7 @@ public class Assignment {
     private Event event;
 
     private String rolAsignado;
+    private String horaLlegada; // Custom override
     private Double pagoAsignado;
     private Boolean pagado = false;
     private Integer diasAsignados;

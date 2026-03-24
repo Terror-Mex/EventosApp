@@ -268,7 +268,7 @@ const WorkerEvents = () => {
                                                                             {dayjs(h.fecha, 'YYYY-MM-DD').format('dddd DD/MM/YYYY')}
                                                                         </div>
                                                                         <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
-                                                                            <div><span className="font-bold text-gray-500">Llegada:</span> <span className="font-bold text-red-600">{h.llegada}</span></div>
+                                                                            <div><span className="font-bold text-gray-500">Llegada:</span> <span className="font-bold text-red-600">{eventDetails.horaLlegada || h.llegada}</span></div>
                                                                             <div><span className="font-bold text-gray-500">Inicio:</span> {h.inicio} </div>
                                                                             <div><span className="font-bold text-gray-500">Fin:</span> {h.fin} </div>
                                                                         </div>
@@ -280,7 +280,7 @@ const WorkerEvents = () => {
                                                     return (
                                                         <div className="bg-white border border-gray-100 p-2 text-xs rounded-lg shadow-sm">
                                                             <div className="grid grid-cols-1 gap-1">
-                                                                <p><span className="font-bold text-gray-500">Llegada:</span> <span className="font-bold text-red-600">{eventDetails.event.horaLlegada}</span></p>
+                                                                <p><span className="font-bold text-gray-500">Llegada:</span> <span className="font-bold text-red-600">{eventDetails.horaLlegada || eventDetails.event.horaLlegada}</span></p>
                                                                 <p><span className="font-bold text-gray-500">Evento:</span> {eventDetails.event.horaInicio} a {eventDetails.event.horaFin}</p>
                                                             </div>
                                                         </div>
@@ -335,7 +335,7 @@ const WorkerEvents = () => {
                                             if (hList.length === 0) {
                                                 hList = [{
                                                     fecha: dayjs(eventDetails.event.fechaInicio, 'YYYY-MM-DD').format('YYYY-MM-DD'),
-                                                    llegada: eventDetails.event.horaLlegada
+                                                    llegada: eventDetails.horaLlegada || eventDetails.event.horaLlegada
                                                 }];
                                             }
 

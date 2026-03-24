@@ -347,6 +347,7 @@ public class AdminController {
         Integer diasAsignados = Integer.parseInt(payload.get("diasAsignados").toString());
         Double pagoExtras = payload.containsKey("pagoExtras") ? Double.parseDouble(payload.get("pagoExtras").toString()) : 0.0;
         String diasSeleccionados = payload.containsKey("diasSeleccionados") ? payload.get("diasSeleccionados").toString() : null;
+        String horaLlegada = payload.containsKey("horaLlegada") ? payload.get("horaLlegada").toString() : null;
 
         User user = userRepository.findById(userId).orElseThrow();
         Event event = eventRepository.findById(eventId).orElseThrow();
@@ -442,6 +443,7 @@ public class AdminController {
         assignment.setUser(user);
         assignment.setEvent(event);
         assignment.setRolAsignado(rolAsignado);
+        assignment.setHoraLlegada(horaLlegada);
         assignment.setPagoAsignado(pagoAsignado);
         assignment.setDiasAsignados(diasAsignados);
         assignment.setPagoExtras(pagoExtras);
