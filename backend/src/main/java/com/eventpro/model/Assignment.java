@@ -26,6 +26,7 @@ public class Assignment {
 
     private String rolAsignado;
     private Double pagoAsignado;
+    private Boolean pagado = false;
     private Integer diasAsignados;
     private Double pagoExtras;
 

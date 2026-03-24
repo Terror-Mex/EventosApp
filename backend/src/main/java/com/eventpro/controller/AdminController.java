@@ -461,6 +461,18 @@ public class AdminController {
         return ResponseEntity.ok(savedAssignment);
     }
 
+    @PutMapping("/assignments/{id}/pagar")
+    public ResponseEntity<?> togglePagado(@PathVariable Long id) {
+        return assignmentRepository.findById(id).map(assignment -> {
+            assignment.setPagado(assignment.getPagado() == null || !assignment.getPagado());
+            // Optionally, notify the worker that they've been paid
+            if (assignment.getPagado() && assignment.getUser().getFcmToken() != null && !assignment.getUser().getFcmToken().isEmpty()) {
+                fcmService.sendPushNotification(assignment.getUser().getFcmToken(), "Pago Confirmado", "Tu pago para el evento " + assignment.getEvent().getNombre() + " ha sido marcado como Completado.", "/worker/payments");
+            }
+            return ResponseEntity.ok(assignmentRepository.save(assignment));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/assignments/{id}")
     public ResponseEntity<?> deleteAssignment(@PathVariable Long id) {
         return assignmentRepository.findById(id).map(assignment -> {
