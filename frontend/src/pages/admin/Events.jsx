@@ -1234,80 +1234,88 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                                     </div>
                                                                 ) : (
                                                                     <>
-                                                                {/* Hora Acordada */}
-                                                                <div className="w-full sm:w-auto flex flex-col lg:items-center">
-                                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Llegada</span>
-                                                                    <div className="flex items-center text-red-500 font-black text-sm flex-wrap xl:justify-center">
-                                                                        <Clock size={14} className="mr-1.5" />
+                                                                <div className="flex items-center justify-between w-full lg:w-auto mb-2 lg:mb-0">
+                                                                    <div className="flex flex-col lg:items-center hidden lg:flex">
+                                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Hora Llegada</span>
+                                                                        <div className="flex items-center text-red-500 font-black text-sm">
+                                                                            <Clock size={14} className="mr-1.5" />
+                                                                            {h.llegada || event.horaLlegada}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center text-red-500 font-black text-sm lg:hidden bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
+                                                                        <Clock size={12} className="mr-1" />
                                                                         {h.llegada || event.horaLlegada}
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Entrada Real */}
-                                                                <div className="w-full sm:w-auto flex flex-col lg:items-center">
-                                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Entrada</span>
-                                                                    <div className="w-full flex items-center justify-between lg:justify-center gap-2">
-                                                                        {ci?.horaEntrada ? (
-                                                                            <div className="flex items-center gap-2 bg-success/30 border border-success/40 pl-3 pr-1 py-1 rounded-lg shadow-sm">
-                                                                                <div className="flex items-center text-sidebar font-black text-xs whitespace-nowrap">
-                                                                                    <CheckSquare size={14} className="mr-1.5 text-sidebar" />
-                                                                                    {dayjs(ci.horaEntrada).format('HH:mm')}
-                                                                                </div>
-                                                                                {ci.fotoEntrada && (
-                                                                                    <button onClick={() => onPreviewImage(ci.fotoEntrada.rutaArchivo)} className="bg-white hover:bg-success/50 text-sidebar p-1 rounded-md shadow-sm border border-success/30 transition-all ml-auto" title="Ver foto de entrada">
-                                                                                        <ImageIcon size={14} />
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-300 px-3 py-1 rounded-lg">Pend.</span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Montaje / Pruebas */}
-                                                                {asg.rolAsignado !== 'Intérprete' && (
-                                                                    <div className="w-full sm:w-auto flex flex-col lg:items-center">
-                                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Montaje</span>
-                                                                        <div className="w-full flex items-center justify-between lg:justify-center gap-2">
-                                                                            {ci?.horaMontaje ? (
-                                                                                <div className="flex items-center gap-2 bg-accent/30 border border-accent/40 pl-3 pr-1 py-1 rounded-lg shadow-sm">
-                                                                                    <div className="flex items-center text-sidebar font-black text-xs whitespace-nowrap">
-                                                                                        <CheckSquare size={14} className="mr-1.5 text-sidebar" />
-                                                                                        {dayjs(ci.horaMontaje).format('HH:mm')}
+                                                                {/* CONTENEDOR DE CHECKS (HORIZONTAL SIEMPRE) */}
+                                                                <div className="flex flex-row items-center justify-between lg:justify-end w-full lg:w-auto gap-2">
+                                                                    {/* Entrada Real */}
+                                                                    <div className="flex flex-col lg:items-center flex-1">
+                                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 lg:text-center">Entrada</span>
+                                                                        <div className="w-full flex items-center justify-start lg:justify-center">
+                                                                            {ci?.horaEntrada ? (
+                                                                                <div className="flex items-center gap-1.5 bg-success/30 border border-success/40 pl-2 pr-1 py-1 rounded-lg shadow-sm">
+                                                                                    <div className="flex items-center text-sidebar font-black text-[11px] sm:text-xs whitespace-nowrap">
+                                                                                        <CheckSquare size={12} className="mr-1 text-sidebar" />
+                                                                                        {dayjs(ci.horaEntrada).format('HH:mm')}
                                                                                     </div>
-                                                                                    {ci.fotoMontaje && (
-                                                                                        <button onClick={() => onPreviewImage(ci.fotoMontaje.rutaArchivo)} className="bg-white hover:bg-accent/50 text-sidebar p-1 rounded-md shadow-sm border border-accent/30 transition-all ml-auto" title="Ver foto de montaje">
-                                                                                            <ImageIcon size={14} />
+                                                                                    {ci.fotoEntrada && (
+                                                                                        <button onClick={() => onPreviewImage(ci.fotoEntrada.rutaArchivo)} className="bg-white hover:bg-success/50 text-sidebar p-1 rounded-md shadow-sm border border-success/30 transition-all" title="Ver foto de entrada">
+                                                                                            <ImageIcon size={12} />
                                                                                         </button>
                                                                                     )}
                                                                                 </div>
                                                                             ) : (
-                                                                                <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-300 px-3 py-1 rounded-lg">Pend.</span>
+                                                                                <span className="text-gray-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-300 px-2 py-1 rounded-lg">Pend.</span>
                                                                             )}
                                                                         </div>
                                                                     </div>
-                                                                )}
 
-                                                                {/* Salida Real */}
-                                                                <div className="w-full sm:w-auto flex flex-col lg:items-center">
-                                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Salida</span>
-                                                                    <div className="w-full flex items-center justify-between lg:justify-center gap-2">
-                                                                        {ci?.horaSalida ? (
-                                                                            <div className="flex items-center gap-2 bg-primary/40 border border-primary/50 pl-3 pr-1 py-1 rounded-lg shadow-sm">
-                                                                                <div className="flex items-center text-sidebar font-black text-xs whitespace-nowrap">
-                                                                                    <CheckSquare size={14} className="mr-1.5 text-sidebar" />
-                                                                                    {dayjs(ci.horaSalida).format('HH:mm')}
-                                                                                </div>
-                                                                                {ci.fotoSalida && (
-                                                                                    <button onClick={() => onPreviewImage(ci.fotoSalida.rutaArchivo)} className="bg-white hover:bg-primary/50 text-sidebar p-1 rounded-md shadow-sm border border-primary/30 transition-all ml-auto" title="Ver foto de salida">
-                                                                                        <ImageIcon size={14} />
-                                                                                    </button>
+                                                                    {/* Montaje / Pruebas */}
+                                                                    {asg.rolAsignado !== 'Intérprete' && (
+                                                                        <div className="flex flex-col lg:items-center flex-1">
+                                                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 lg:text-center">Montaje</span>
+                                                                            <div className="w-full flex items-center justify-start lg:justify-center">
+                                                                                {ci?.horaMontaje ? (
+                                                                                    <div className="flex items-center gap-1.5 bg-accent/30 border border-accent/40 pl-2 pr-1 py-1 rounded-lg shadow-sm">
+                                                                                        <div className="flex items-center text-sidebar font-black text-[11px] sm:text-xs whitespace-nowrap">
+                                                                                            <CheckSquare size={12} className="mr-1 text-sidebar" />
+                                                                                            {dayjs(ci.horaMontaje).format('HH:mm')}
+                                                                                        </div>
+                                                                                        {ci.fotoMontaje && (
+                                                                                            <button onClick={() => onPreviewImage(ci.fotoMontaje.rutaArchivo)} className="bg-white hover:bg-accent/50 text-sidebar p-1 rounded-md shadow-sm border border-accent/30 transition-all" title="Ver foto de montaje">
+                                                                                                <ImageIcon size={12} />
+                                                                                            </button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <span className="text-gray-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-300 px-2 py-1 rounded-lg">Pend.</span>
                                                                                 )}
                                                                             </div>
-                                                                        ) : (
-                                                                            <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-300 px-3 py-1 rounded-lg">Pend.</span>
-                                                                        )}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Salida Real */}
+                                                                    <div className="flex flex-col lg:items-center flex-1">
+                                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 lg:text-center">Salida</span>
+                                                                        <div className="w-full flex items-center justify-start lg:justify-center">
+                                                                            {ci?.horaSalida ? (
+                                                                                <div className="flex items-center gap-1.5 bg-primary/40 border border-primary/50 pl-2 pr-1 py-1 rounded-lg shadow-sm">
+                                                                                    <div className="flex items-center text-sidebar font-black text-[11px] sm:text-xs whitespace-nowrap">
+                                                                                        <CheckSquare size={12} className="mr-1 text-sidebar" />
+                                                                                        {dayjs(ci.horaSalida).format('HH:mm')}
+                                                                                    </div>
+                                                                                    {ci.fotoSalida && (
+                                                                                        <button onClick={() => onPreviewImage(ci.fotoSalida.rutaArchivo)} className="bg-white hover:bg-primary/50 text-sidebar p-1 rounded-md shadow-sm border border-primary/30 transition-all" title="Ver foto de salida">
+                                                                                            <ImageIcon size={12} />
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-gray-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-300 px-2 py-1 rounded-lg">Pend.</span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                                     </>
