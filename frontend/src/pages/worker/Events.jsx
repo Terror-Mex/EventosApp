@@ -262,13 +262,15 @@ const WorkerEvents = () => {
                                                                 hList = hList.filter(h => assignedDays.includes(h.fecha));
                                                             }
                                                             if (hList && hList.length > 0) {
+                                                                let llegadasMap = {};
+                                                                try { llegadasMap = eventDetails.assignment?.llegadasPorDia ? JSON.parse(eventDetails.assignment.llegadasPorDia) : {}; } catch(e2) {}
                                                                 return hList.map((h, i) => (
                                                                     <div key={`w-h-${i}`} className="bg-white border border-gray-100 p-2 text-xs rounded-lg shadow-sm w-full">
                                                                         <div className="font-bold text-gray-800 border-b border-gray-100 pb-1 mb-1">
                                                                             {dayjs(h.fecha, 'YYYY-MM-DD').format('dddd DD/MM/YYYY')}
                                                                         </div>
                                                                         <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
-                                                                            <div><span className="font-bold text-gray-500">Llegada:</span> <span className="font-bold text-red-600">{eventDetails.horaLlegada || h.llegada}</span></div>
+                                                                            <div><span className="font-bold text-gray-500">Llegada:</span> <span className="font-bold text-red-600">{llegadasMap[h.fecha] || eventDetails.assignment?.horaLlegada || h.llegada}</span></div>
                                                                             <div><span className="font-bold text-gray-500">Inicio:</span> {h.inicio} </div>
                                                                             <div><span className="font-bold text-gray-500">Fin:</span> {h.fin} </div>
                                                                         </div>
@@ -335,9 +337,12 @@ const WorkerEvents = () => {
                                             if (hList.length === 0) {
                                                 hList = [{
                                                     fecha: dayjs(eventDetails.event.fechaInicio, 'YYYY-MM-DD').format('YYYY-MM-DD'),
-                                                    llegada: eventDetails.horaLlegada || eventDetails.event.horaLlegada
                                                 }];
                                             }
+
+                                            // Parse per-day arrival map
+                                            let llegadasMap = {};
+                                            try { llegadasMap = eventDetails.assignment?.llegadasPorDia ? JSON.parse(eventDetails.assignment.llegadasPorDia) : {}; } catch(e) {}
 
                                             // Filter to only assigned days if we have specific days
                                             if (assignedDays.length > 0) {
@@ -353,13 +358,19 @@ const WorkerEvents = () => {
                                             const currentCiList = eventDetails.checkIns || (eventDetails.checkIn ? [eventDetails.checkIn] : []);
                                             const dayCi = currentCiList.find(c => normalizeDate(c.fecha) === normalizeDate(h.fecha)) || {};
                                             const isToday = h.fecha === dayjs().format('YYYY-MM-DD');
+                                            const horaLlegadaDia = llegadasMap[h.fecha] || eventDetails.assignment?.horaLlegada || h.llegada || null;
 
                                                 return (
                                                     <div key={`w-asistencia-${i}`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                                        <div className="flex justify-between items-center mb-3">
-                                                            <div className="flex items-center">
-                                                                <Calendar size={14} className="mr-2 text-gray-400" />
+                                                        <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <Calendar size={14} className="text-gray-400" />
                                                                 <span className="text-sm font-bold text-gray-700 capitalize">{dayjs(h.fecha, 'YYYY-MM-DD').format('dddd, DD MMM YYYY')}</span>
+                                                                {horaLlegadaDia && (
+                                                                    <span className="flex items-center gap-1 bg-red-50 border border-red-200 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-lg">
+                                                                        🕐 Llegada: {horaLlegadaDia}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             {isToday && <span className="bg-primary/20 text-sidebar text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest">HOY</span>}
                                                         </div>
