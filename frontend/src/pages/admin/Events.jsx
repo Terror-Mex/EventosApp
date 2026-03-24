@@ -429,7 +429,7 @@ const AdminEvents = () => {
                                 <LayoutIcon size={16} className="mr-2.5 mt-0.5 text-accent flex-shrink-0" />
                                 <span>
                                     {dayjs(event.fechaInicio).format('DD/MM/YYYY')} al {dayjs(event.fechaFin).format('DD/MM/YYYY')}<br />
-                                    <span className="text-gray-500 text-xs font-medium">Llegada: {event.horaLlegada} • Inicio: {event.horaInicio}</span>
+                                    <span className="text-gray-500 text-xs font-medium">Inicio: {event.horaInicio}</span>
                                 </span>
                             </div>
                             <div className="flex text-sm text-gray-600 items-center">
@@ -576,17 +576,10 @@ const AdminEvents = () => {
                                 </h4>
                                 <div className="space-y-4">
                                     {eventForm.horariosList?.map((horario, index) => (
-                                        <div key={`h-${index}`} className="bg-white p-3 rounded-lg border border-sidebar/10 shadow-sm grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                                        <div key={`h-${index}`} className="bg-white p-3 rounded-lg border border-sidebar/10 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                             <div className="font-bold text-sm text-sidebar mb-1 sm:mb-0 pb-1 sm:pb-2 border-b sm:border-b-0 border-sidebar/10 flex items-center">
                                                 <CalendarDays size={14} className="mr-1.5" />
                                                 {dayjs(horario.fecha, 'YYYY-MM-DD').format('DD/MM/YYYY')}
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 mb-1 block">Llegada</label>
-                                                <input type="time" required className="input-field bg-accent/10 border-accent/30 text-sidebar font-semibold text-sm p-1.5" value={horario.llegada} onChange={(e) => {
-                                                    const newList = eventForm.horariosList.map((h, i) => i === index ? { ...h, llegada: e.target.value } : h);
-                                                    setEventForm({ ...eventForm, horariosList: newList });
-                                                }} />
                                             </div>
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 mb-1 block">Inicio</label>
@@ -842,8 +835,8 @@ const AdminEvents = () => {
                                                     <input type="number" step="0.01" className="input-field text-sm" value={assignForm.pagoExtras} onChange={(e) => setAssignForm({ ...assignForm, pagoExtras: e.target.value })} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Excepción Llegada</label>
-                                                    <input type="time" className="input-field text-sm" title="Sólo si llega a diferente hora del evento" value={assignForm.horaLlegada || ''} onChange={(e) => setAssignForm({ ...assignForm, horaLlegada: e.target.value })} />
+                                                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Hora Llegada a Evento</label>
+                                                    <input type="time" required className="input-field text-sm" title="Hora de llegada para este trabajador" value={assignForm.horaLlegada || ''} onChange={(e) => setAssignForm({ ...assignForm, horaLlegada: e.target.value })} />
                                                 </div>
                                             </div>
                                         </div>
@@ -1015,9 +1008,6 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                                     {dayjs(h.fecha, 'YYYY-MM-DD').format('DD/MM/YYYY')}
                                                                 </div>
                                                                 <div className="flex justify-between py-1 border-b border-gray-100 last:border-0 last:pb-0">
-                                                                    <span className="text-gray-500">Llegada Staff:</span><span className="font-bold text-gray-800">{h.llegada}</span>
-                                                                </div>
-                                                                <div className="flex justify-between py-1 border-b border-gray-100 last:border-0 last:pb-0">
                                                                     <span className="text-gray-500">Inicio Evento:</span><span className="font-bold text-gray-800">{h.inicio}</span>
                                                                 </div>
                                                                 <div className="flex justify-between py-1 last:border-0 last:pb-0">
@@ -1030,10 +1020,6 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                             } catch (e) { }
                                             return (
                                                 <div className="space-y-2">
-                                                    <div className="flex justify-between py-2 border-b border-gray-50">
-                                                        <span className="text-gray-600">Llegada Staff:</span>
-                                                        <span className="font-bold text-gray-900">{event.horaLlegada}</span>
-                                                    </div>
                                                     <div className="flex justify-between py-2 border-b border-gray-50">
                                                         <span className="text-gray-600">Inicio Evento:</span>
                                                         <span className="font-bold text-gray-900">{event.horaInicio}</span>
@@ -1249,12 +1235,12 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Hora Llegada</span>
                                                                         <div className="flex items-center text-red-500 font-black text-sm">
                                                                             <Clock size={14} className="mr-1.5" />
-                                                                            {asg.horaLlegada || h.llegada || event.horaLlegada}
+                                                                            {asg.horaLlegada || event.horaLlegada || "N/A"}
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center text-red-500 font-black text-sm lg:hidden bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
                                                                         <Clock size={12} className="mr-1" />
-                                                                        {asg.horaLlegada || h.llegada || event.horaLlegada}
+                                                                        {asg.horaLlegada || event.horaLlegada || "N/A"}
                                                                     </div>
                                                                 </div>
 
