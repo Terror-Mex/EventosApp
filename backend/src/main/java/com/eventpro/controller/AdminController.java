@@ -473,6 +473,28 @@ public class AdminController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/assignments/bulk-pagar")
+    public ResponseEntity<?> bulkTogglePagado(@RequestBody List<Long> ids) {
+        List<Assignment> assignments = assignmentRepository.findAllById(ids);
+        if(assignments.isEmpty()) return ResponseEntity.ok().build();
+        
+        // Find if we are marking as paid or unpaid based on the first item
+        boolean targetStatus = assignments.get(0).getPagado() == null || !assignments.get(0).getPagado();
+        
+        for (Assignment asg : assignments) {
+            asg.setPagado(targetStatus);
+        }
+        assignmentRepository.saveAll(assignments);
+        
+        // Notify user of the first assignment (assuming all belong to same worker)
+        User user = assignments.get(0).getUser();
+        if (targetStatus && user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+            fcmService.sendPushNotification(user.getFcmToken(), "Quincena Pagada", "Tu pago quincenal ha sido marcado como Completado.", "/worker/payments");
+        }
+        
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/assignments/{id}")
     public ResponseEntity<?> deleteAssignment(@PathVariable Long id) {
         return assignmentRepository.findById(id).map(assignment -> {
