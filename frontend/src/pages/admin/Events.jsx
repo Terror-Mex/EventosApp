@@ -360,7 +360,6 @@ const AdminEvents = () => {
 
             try {
                 const checkInRes = await api.get(`/admin/events/${event.id}/checkins`);
-                console.log("CHECKINS CARGADOS:", checkInRes.data);
                 setEventCheckIns(checkInRes.data || []);
             } catch (checkInErr) {
                 console.error('Error fetching checkins:', checkInErr);
