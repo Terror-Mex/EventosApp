@@ -162,8 +162,12 @@ const AdminPayments = () => {
                                                 
                                                 {/* Header Trabajador (Left Col) */}
                                                 <div className={`md:w-64 p-5 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r ${activeTab === 'pagados' ? 'bg-gray-100/50 border-gray-200' : 'bg-sidebar/5 border-sidebar/10'}`}>
-                                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-xl mb-3 shadow-inner ${activeTab === 'pagados' ? 'bg-gray-200 text-gray-500' : 'bg-white text-sidebar border border-sidebar/10'}`}>
-                                                        {workerData.user?.nombre?.charAt(0).toUpperCase()}
+                                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-xl mb-3 shadow-inner overflow-hidden border ${activeTab === 'pagados' ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-sidebar border-sidebar/10'}`}>
+                                                        {workerData.user?.fotoPerfil ? (
+                                                            <img src={workerData.user.fotoPerfil} alt="" className={`w-full h-full object-cover ${activeTab === 'pagados' ? 'grayscale opacity-50' : ''}`} />
+                                                        ) : (
+                                                            workerData.user?.nombre?.charAt(0).toUpperCase()
+                                                        )}
                                                     </div>
                                                     <h3 className={`font-bold ${activeTab === 'pagados' ? 'text-gray-600' : 'text-gray-900'}`}>{workerData.user?.nombre}</h3>
                                                     <p className="text-xs text-gray-500 font-medium mb-3">{workerData.user?.email}</p>
