@@ -170,16 +170,23 @@ const WorkerEvents = () => {
                             <div
                                 key={event.id}
                                 onClick={() => loadEventDetails(event.id)}
-                                className={`card cursor-pointer transition-all ${selectedEventId === event.id ? 'ring-2 ring-primary border-transparent' : 'hover:border-primary-light'}`}
+                                className={`card cursor-pointer transition-all border-l-4 ${selectedEventId === event.id ? 'ring-2 ring-primary border-primary' : 'hover:border-primary-light'} ${event.estado === 'EN_CURSO' ? 'bg-blue-50/50 border-blue-200' : 'border-l-gray-300'}`}
                             >
                                 <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-md leading-tight">{event.nombre}</h3>
-                                    {event.numeroEvento && (
-                                        <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">#{event.numeroEvento}</span>
-                                    )}
+                                    <div className="min-w-0 pr-2">
+                                        <h3 className="font-bold text-md leading-tight truncate">{event.nombre}</h3>
+                                        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                            <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${event.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>
+                                                {event.estado}
+                                            </span>
+                                            {event.numeroEvento && (
+                                                <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest border border-gray-200">#{event.numeroEvento}</span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                                 <p className="text-[12px] text-gray-600 mb-1 flex items-center"><Calendar size={12} className="mr-1.5 text-accent" /> {dayjs(event.fechaInicio).format('DD/MM/YYYY')}</p>
-                                <p className="text-[11px] font-medium text-sidebar bg-primary/40 inline-block px-1.5 py-0.5 rounded mt-1">{rolAsignado}</p>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-sidebar bg-primary/40 inline-block px-1.5 py-0.5 rounded mt-1">{rolAsignado}</p>
                             </div>
                         ))
                     )}
@@ -241,7 +248,9 @@ const WorkerEvents = () => {
                                     )}
                                 </div>
                                 <div className="mt-2 flex gap-2 items-center">
-                                    <span className={`text-xs px-2 py-1 rounded-md font-medium uppercase tracking-wider ${eventDetails.event.estado === 'FINALIZADO' ? (isHistoryEvent(eventDetails.event) ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-800') : 'bg-gray-100 text-gray-800'}`}>{eventDetails.event.estado}</span>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest border shadow-sm ${eventDetails.event.estado === 'FINALIZADO' ? (isHistoryEvent(eventDetails.event) ? 'bg-gray-200 text-gray-700 border-gray-300' : 'bg-green-100 text-green-800 border-green-200') : (eventDetails.event.estado === 'EN_CURSO' ? 'bg-blue-100 text-blue-800 border-blue-200 shadow-blue-100' : 'bg-yellow-100 text-yellow-800 border-yellow-200')} `}>
+                                        {eventDetails.event.estado}
+                                    </span>
                                     <span className="bg-primary text-text text-xs px-2 py-1 rounded-md font-medium">{eventDetails.assignment.rolAsignado}</span>
                                 </div>
                             </div>
@@ -316,17 +325,32 @@ const WorkerEvents = () => {
                                     <div className="flex gap-3">
                                         <div className="mt-0.5 text-accent"><DollarSign size={20} /></div>
                                         <div>
-                                            <p className="font-semibold text-gray-900">Pago Asignado</p>
-                                            <p className="text-gray-600 tracking-wide font-medium">${eventDetails.assignment.pagoAsignado} <span className="text-xs text-gray-400 font-normal">/día</span></p>
+                                            <p className="font-semibold text-gray-900 leading-tight">Pago Asignado</p>
+                                            <p className="text-gray-600 tracking-wide font-medium mt-1">
+                                                ${eventDetails.assignment.pagoAsignado} <span className="text-[10px] text-gray-400 font-bold uppercase">/día</span>
+                                            </p>
 
-                                            {eventDetails.assignment.pagoExtras > 0 && (
-                                                <p className="text-sidebar/70 tracking-wide font-medium text-sm mt-1">+ ${eventDetails.assignment.pagoExtras} <span className="text-xs text-sidebar/50 font-normal">(Extras)</span></p>
-                                            )}
-
-                                            {eventDetails.assignment.pagoExtras > 0 && (
-                                                <p className="text-sidebar tracking-wide font-bold mt-1 text-sm border-t border-gray-100 pt-1">
-                                                    Total: ${(eventDetails.assignment.pagoAsignado * eventDetails.assignment.diasAsignados) + eventDetails.assignment.pagoExtras}
-                                                </p>
+                                            {(eventDetails.assignment.diasAsignados > 1 || eventDetails.assignment.pagoExtras > 0) && (
+                                                <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
+                                                    {eventDetails.assignment.diasAsignados > 1 && (
+                                                        <div className="flex justify-between text-[11px] text-gray-500 font-medium">
+                                                            <span>Base ({eventDetails.assignment.diasAsignados} días):</span>
+                                                            <span>${(eventDetails.assignment.pagoAsignado * eventDetails.assignment.diasAsignados).toFixed(2)}</span>
+                                                        </div>
+                                                    )}
+                                                    {eventDetails.assignment.pagoExtras > 0 && (
+                                                        <div className="flex justify-between text-[11px] text-gray-500 font-medium">
+                                                            <span>Extras:</span>
+                                                            <span>${eventDetails.assignment.pagoExtras.toFixed(2)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between items-center bg-success/30 px-2 py-1 rounded border border-success/40 mt-2">
+                                                        <span className="text-[10px] font-black uppercase text-sidebar">Total Estimado:</span>
+                                                        <span className="text-sm font-black text-sidebar">
+                                                            ${((eventDetails.assignment.pagoAsignado * eventDetails.assignment.diasAsignados) + eventDetails.assignment.pagoExtras).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -639,7 +663,6 @@ const WorkerEvents = () => {
                                     </button>
                                 </form>
                             </div>
-
                         </div>
                     ) : null}
                 </div>
