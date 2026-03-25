@@ -406,7 +406,7 @@ const AdminEvents = () => {
                 {events.filter(e => !isHistoryEvent(e)).map((event) => (
                     <div key={event.id}
                         onClick={() => handleOpenDetail(event, 'details')}
-                        className="card relative flex flex-col hover:border-primary cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-md"
+                        className={`card relative flex flex-col hover:border-sidebar cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-md ${event.estado === 'EN_CURSO' ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-100 shadow-blue-50' : ''}`}
                     >
                         <div className="absolute top-4 right-4 flex space-x-2 z-10">
                             <button onClick={(e) => { e.stopPropagation(); handleOpenEventModal(event); }} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Editar">
