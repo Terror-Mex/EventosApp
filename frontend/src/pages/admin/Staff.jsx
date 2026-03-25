@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Edit2, UserCheck, UserX, Trash2, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, UserCheck, UserX, Trash2, AlertCircle, ChevronDown, ChevronRight, User as UserIcon } from 'lucide-react';
 
 const AdminStaff = () => {
     const { user: currentUser } = useAuth();
@@ -169,12 +169,23 @@ const AdminStaff = () => {
                                             {!collapsedGroups[groupName] && users.map((user) => (
                                                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${!user.activo ? 'opacity-60 bg-gray-50' : ''}`}>
                                                     <td className="px-6 py-4">
-                                                        <p className="font-bold text-gray-900">{user.nombre}</p>
-                                                        {user.rol === 'ADMIN' ? (
-                                                            <p className="text-[11px] font-black tracking-wider uppercase text-purple-600 mt-0.5">Administrador</p>
-                                                        ) : (
-                                                            <p className="text-xs text-gray-500 mt-0.5">ID: #{user.id}</p>
-                                                        )}
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
+                                                                {user.fotoPerfil ? (
+                                                                    <img src={user.fotoPerfil} alt="" className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <UserIcon size={20} className="text-gray-300" />
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="font-bold text-gray-900 truncate">{user.nombre}</p>
+                                                                {user.rol === 'ADMIN' ? (
+                                                                    <p className="text-[11px] font-black tracking-wider uppercase text-purple-600 mt-0.5">Administrador</p>
+                                                                ) : (
+                                                                    <p className="text-xs text-gray-500 mt-0.5">ID: #{user.id}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <p className="text-sm text-gray-800">{user.email}</p>
@@ -247,9 +258,16 @@ const AdminStaff = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-50 p-4">
                     <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl">
                         <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                            <h3 className="text-xl font-bold text-gray-900">
-                                {editingId ? 'Editar Personal' : 'Agregar Personal'}
-                            </h3>
+                            <div className="flex items-center gap-3">
+                                {form.fotoPerfil && (
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-primary shadow-sm bg-gray-50 flex-shrink-0">
+                                        <img src={form.fotoPerfil} alt="" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {editingId ? 'Editar Personal' : 'Agregar Personal'}
+                                </h3>
+                            </div>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-900">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>

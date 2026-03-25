@@ -37,4 +37,7 @@ public class User {
 
     @Column(length = 1000)
     private String fcmToken;
+
+    @Column(length = 1000)
+    private String fotoPerfil;
 }

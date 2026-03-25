@@ -291,6 +291,7 @@ public class AdminController {
             user.setTelefono(userDetails.getTelefono());
             user.setPuesto(userDetails.getPuesto());
             user.setActivo(userDetails.isActivo());
+            user.setFotoPerfil(userDetails.getFotoPerfil());
             return ResponseEntity.ok(userRepository.save(user));
         }).orElse(ResponseEntity.notFound().build());
     }

@@ -283,4 +283,23 @@ public class WorkerController {
 
         return ResponseEntity.ok(report);
     }
+    @PostMapping("/profile-picture")
+    public ResponseEntity<?> updateProfilePicture(@RequestParam("photo") MultipartFile file) {
+        try {
+            User user = getCurrentUser();
+            
+            // Delete old picture if exists
+            if (user.getFotoPerfil() != null) {
+                fileStorageService.deleteFile(user.getFotoPerfil());
+            }
+            
+            String fileUrl = fileStorageService.storeFile(file);
+            user.setFotoPerfil(fileUrl);
+            userRepository.save(user);
+            
+            return ResponseEntity.ok(Map.of("fotoPerfil", fileUrl));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al subir foto de perfil: " + e.getMessage());
+        }
+    }
 }

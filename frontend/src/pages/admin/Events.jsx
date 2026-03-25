@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import dayjs from 'dayjs';
-import { Plus, Edit2, Trash2, Calendar as LayoutIcon, MapPin, DollarSign, Users, X, Clock, CalendarDays } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar as LayoutIcon, MapPin, DollarSign, Users, X, Clock, CalendarDays, User as UserIcon } from 'lucide-react';
 import { CheckSquare, Image as ImageIcon } from 'lucide-react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -897,8 +897,16 @@ const AdminEvents = () => {
                                         <div className="space-y-3">
                                             {eventAssignments.map(asg => (
                                                 <div key={asg.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center group">
-                                                    <div className="flex-1">
-                                                        <p className="font-bold text-gray-900 text-sm">{asg.user.nombre}</p>
+                                                    <div className="flex-1 flex items-center gap-3 min-w-0">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
+                                                            {asg.user.fotoPerfil ? (
+                                                                <img src={asg.user.fotoPerfil} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <UserIcon size={20} className="text-gray-300" />
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-gray-900 text-sm truncate">{asg.user.nombre}</p>
                                                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mt-1">
                                                             <span className="bg-gray-100 px-2 py-0.5 rounded uppercase"><span className="font-bold mr-1 text-gray-700">Rol:</span> {asg.rolAsignado}</span>
                                                             <span className="bg-gray-100 px-2 py-0.5 rounded uppercase"><span className="font-bold mr-1 text-gray-700">Días:</span> {asg.diasAsignados}</span>
@@ -920,8 +928,9 @@ const AdminEvents = () => {
                                                             return null;
                                                         })()}
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleDeleteAssignment(asg.id)}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteAssignment(asg.id)}
                                                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
                                                         title="Eliminar asignación"
                                                     >
@@ -1125,8 +1134,12 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
                                     {assignments && assignments.length > 0 ? (
                                         assignments.map(asg => (
                                             <div key={asg.id} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex items-center">
-                                                <div className="w-8 h-8 rounded-full bg-success/40 flex items-center justify-center mr-3 shadow-sm">
-                                                    <Users size={14} className="text-sidebar" />
+                                                <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center mr-3 shadow-sm border border-gray-100 overflow-hidden bg-gray-50">
+                                                    {asg.user.fotoPerfil ? (
+                                                        <img src={asg.user.fotoPerfil} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Users size={14} className="text-gray-400" />
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-bold text-gray-900">{asg.user.nombre}</p>
@@ -1206,8 +1219,12 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
 
                                                 {/* Info del Trabajador */}
                                                 <div className="flex items-center gap-4 w-full lg:w-1/4">
-                                                    <div className="w-12 h-12 rounded-full bg-accent/20 text-sidebar flex items-center justify-center font-black text-xl flex-shrink-0 shadow-inner">
-                                                        {asg.user?.nombre.charAt(0).toUpperCase()}
+                                                    <div className="w-12 h-12 rounded-full bg-accent/20 text-sidebar flex items-center justify-center font-black text-xl flex-shrink-0 shadow-inner overflow-hidden border border-gray-100">
+                                                        {asg.user?.fotoPerfil ? (
+                                                            <img src={asg.user.fotoPerfil} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            asg.user?.nombre.charAt(0).toUpperCase()
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <h5 className="font-bold text-sidebar text-lg leading-tight">{asg.user?.nombre}</h5>

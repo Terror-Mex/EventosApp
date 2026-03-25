@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, CheckSquare, Clock, ArrowRight, DollarSign } from 'lucide-react';
+import { Calendar, CheckSquare, Clock, ArrowRight, DollarSign, Camera, User as UserIcon } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
@@ -11,7 +11,7 @@ dayjs.locale('es');
 import { requestNotificationPermissionAndSaveToken, setupForegroundMessages } from '../../utils/firebase';
 
 const WorkerDashboard = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [stats, setStats] = useState({ assignmentsCount: 0, checkinsCount: 0 });
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [payments, setPayments] = useState([]);
@@ -91,18 +91,52 @@ const WorkerDashboard = () => {
         return sorted[0] || null;
     })();
 
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        try {
+            const res = await api.post('/worker/profile-picture', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            updateUser({ fotoPerfil: res.data.fotoPerfil });
+            alert('Foto de perfil actualizada');
+        } catch (error) {
+            console.error('Error uploading photo', error);
+            alert('Error al subir la foto');
+        }
+    };
+
     if (loading) return <div className="p-8 text-center text-primary">Cargando dashboard...</div>;
 
     return (
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold text-gray-800">
-                        Hola, {user?.nombre?.split(' ')[0]} 👋
-                    </h1>
-                    <span className="bg-gray-800 text-primary px-3 py-1 rounded-full text-sm font-bold shadow-sm">
-                        {user?.puesto}
-                    </span>
+                <div className="flex items-center gap-4">
+                    <div className="relative group">
+                        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary shadow-md bg-gray-100 flex items-center justify-center">
+                            {user?.fotoPerfil ? (
+                                <img src={user.fotoPerfil} alt="Perfil" className="w-full h-full object-cover" />
+                            ) : (
+                                <UserIcon size={32} className="text-gray-400" />
+                            )}
+                        </div>
+                        <label className="absolute bottom-0 right-0 p-1.5 bg-sidebar text-primary rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform">
+                            <Camera size={14} />
+                            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                        </label>
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800 leading-tight">
+                            Hola, {user?.nombre?.split(' ')[0]} 👋
+                        </h1>
+                        <span className="bg-gray-800 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm inline-block mt-1">
+                            {user?.puesto}
+                        </span>
+                    </div>
                 </div>
                 <Link to="/worker/reports" className="btn-primary flex items-center shadow-lg hover:-translate-y-0.5 transition-transform">
                     <CheckSquare size={18} className="mr-2" /> Crear Nuevo Reporte
