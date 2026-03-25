@@ -19,6 +19,21 @@ const WorkerEvents = () => {
             return true;
         }
     };
+
+    // Returns true if this worker's last assigned day has already passed
+    const isWorkerDone = (assignment) => {
+        try {
+            if (assignment.diasSeleccionados) {
+                const dias = JSON.parse(assignment.diasSeleccionados);
+                if (dias && dias.length > 0) {
+                    const lastDay = dias.sort().slice(-1)[0];
+                    return dayjs(lastDay).isBefore(dayjs(), 'day');
+                }
+            }
+        } catch(e) {}
+        // Fallback: compare against general event end date
+        return dayjs(assignment.event.fechaFin).isBefore(dayjs(), 'day');
+    };
     const [selectedEventId, setSelectedEventId] = useState(null);
     const [eventDetails, setEventDetails] = useState(null);
     const [detailsLoading, setDetailsLoading] = useState(false);
@@ -148,10 +163,10 @@ const WorkerEvents = () => {
                 
                 <div className="space-y-4">
                     <h2 className="text-sm font-bold text-sidebar uppercase tracking-wider border-b border-gray-100 pb-1">Eventos Activos</h2>
-                    {assignments.filter(a => !isHistoryEvent(a.event)).length === 0 ? (
+                    {assignments.filter(a => !isHistoryEvent(a.event) && !isWorkerDone(a)).length === 0 ? (
                         <div className="text-gray-400 text-xs text-center py-4 italic">No hay eventos activos</div>
                     ) : (
-                        assignments.filter(a => !isHistoryEvent(a.event)).map(({ event, rolAsignado }) => (
+                        assignments.filter(a => !isHistoryEvent(a.event) && !isWorkerDone(a)).map(({ event, rolAsignado }) => (
                             <div
                                 key={event.id}
                                 onClick={() => loadEventDetails(event.id)}
