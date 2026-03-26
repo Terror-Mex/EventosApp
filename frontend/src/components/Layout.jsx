@@ -45,12 +45,11 @@ const Layout = () => {
                 className={`fixed inset-y-0 left-0 bg-sidebar text-white w-64 p-4 z-30 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
-                <div className="flex items-center justify-between lg:justify-center mb-10">
-                    <div className="text-2xl font-bold flex items-center gap-2">
-                        <div className="bg-primary text-sidebar p-1 rounded-md">
-                            <CalendarDays size={24} />
+                <div className="flex items-center justify-between lg:justify-center mb-8">
+                    <div className="flex flex-col items-center">
+                        <div className="w-24 h-24 mb-1">
+                            <img src="/logo-eventpro.png" alt="EventPro Logo" className="w-full h-full object-contain filter brightness-110 drop-shadow-md" />
                         </div>
-                        <span>Event<span className="text-primary">Pro</span></span>
                     </div>
                     <button onClick={toggleMobileMenu} className="lg:hidden text-white/80 hover:text-white">
                         <X size={24} />
@@ -95,11 +94,9 @@ const Layout = () => {
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Mobile Header */}
                 <header className="bg-white shadow-sm lg:hidden flex items-center justify-between p-4 z-10">
-                    <div className="text-xl font-bold flex items-center gap-2 text-sidebar">
-                        <div className="bg-sidebar text-primary p-1 rounded-md">
-                            <CalendarDays size={20} />
-                        </div>
-                        <span>Event<span className="font-black">Pro</span></span>
+                    <div className="flex items-center gap-2">
+                        <img src="/logo-eventpro.png" alt="Logo" className="w-8 h-8 object-contain" />
+                        <span className="text-xl font-bold text-sidebar uppercase tracking-tight">Event<span className="font-black">Pro</span></span>
                     </div>
                     <button onClick={toggleMobileMenu} className="text-gray-600 hover:text-primary">
                         <Menu size={24} />
