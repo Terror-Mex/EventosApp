@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['apple-touch-icon.png', 'logo-eventpro.png'],
       manifest: {
         name: 'EventPro - Gestión de Eventos',
         short_name: 'EventPro',
