@@ -41,7 +41,7 @@ const Login = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center flex-col items-center">
-                    <div className="w-24 h-24 mb-4 transform transition-transform hover:scale-110 drop-shadow-xl">
+                    <div className="w-24 h-24 mb-4 transform transition-transform hover:scale-110">
                         <img src="/logo-eventpro.png" alt="EventPro Logo" className="w-full h-full object-contain" />
                     </div>
                     <h2 className="text-center text-3xl font-extrabold text-sidebar mb-1">

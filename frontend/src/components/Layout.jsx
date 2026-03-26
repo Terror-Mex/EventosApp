@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-    Menu, X, LogOut, Home, Calendar, Users, FileText, CheckSquare, CalendarDays, DollarSign
+    Menu, X, LogOut, Home, Calendar, Users, FileText, CheckSquare, CalendarDays, DollarSign, User as UserIcon
 } from 'lucide-react';
 
 const SidebarLink = ({ to, icon: Icon, children, onClick }) => (
@@ -76,9 +76,18 @@ const Layout = () => {
                 </nav>
 
                 <div className="absolute bottom-4 inset-x-4">
-                    <div className="bg-white/10 border border-white/10 rounded-lg p-4 mb-4">
-                        <p className="text-sm font-bold text-white truncate">{user?.nombre}</p>
-                        <p className="text-xs text-white/80 truncate">{user?.email}</p>
+                    <div className="bg-white/10 border border-white/10 rounded-lg p-4 mb-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 bg-white/5 flex-shrink-0 flex items-center justify-center">
+                            {user?.fotoPerfil ? (
+                                <img src={user.fotoPerfil} alt="Perfil" className="w-full h-full object-cover" />
+                            ) : (
+                                <UserIcon size={20} className="text-white/40" />
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-white truncate">{user?.nombre}</p>
+                            <p className="text-xs text-white/80 truncate">{user?.email}</p>
+                        </div>
                     </div>
                     <button
                         onClick={logout}

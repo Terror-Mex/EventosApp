@@ -49,7 +49,8 @@ public class AuthController {
                 "nombre", user.getNombre(),
                 "email", user.getEmail(),
                 "rol", user.getRol(),
-                "puesto", user.getPuesto() != null ? user.getPuesto() : ""
+                "puesto", user.getPuesto() != null ? user.getPuesto() : "",
+                "fotoPerfil", user.getFotoPerfil() != null ? user.getFotoPerfil() : ""
         ));
 
         return ResponseEntity.ok(response);
@@ -75,7 +76,8 @@ public class AuthController {
                 "nombre", user.getNombre(),
                 "email", user.getEmail(),
                 "rol", user.getRol(),
-                "puesto", user.getPuesto() != null ? user.getPuesto() : ""
+                "puesto", user.getPuesto() != null ? user.getPuesto() : "",
+                "fotoPerfil", user.getFotoPerfil() != null ? user.getFotoPerfil() : ""
         ));
     }
 }
