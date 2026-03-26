@@ -50,7 +50,7 @@ const IosInstallBanner = () => {
                         className="w-11 h-11 rounded-xl shadow-sm"
                         onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/eventpro-icon.svg';
+                            e.target.src = '/vite.svg'; // Genérico
                         }} 
                     />
                 </div>
