@@ -280,10 +280,30 @@ const AdminEvents = () => {
             }
         }
 
+        // Pre-fill per-day arrivals with the event's default or per-day times
+        const llegadasPorDia = {};
+        try {
+            if (event.horarios) {
+                const hList = JSON.parse(event.horarios);
+                hList.forEach(h => {
+                    llegadasPorDia[h.fecha] = h.llegada || event.horaLlegada || '08:00';
+                });
+            }
+        } catch (err) {}
+        
+        if (Object.keys(llegadasPorDia).length === 0) {
+            eventDays.forEach(day => {
+                llegadasPorDia[day] = event.horaLlegada || '08:00';
+            });
+        }
+
         setAssignForm({
-            eventId: event.id, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', diasAsignados: eventDays.length, pagoExtras: 0, horaLlegada: '',
+            eventId: event.id, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', 
+            diasAsignados: eventDays.length, pagoExtras: 0, 
+            horaLlegada: event.horaLlegada || '08:00',
             eventDays: eventDays,
-            diasSeleccionados: [...eventDays] // all days selected by default
+            diasSeleccionados: [...eventDays], // all days selected by default
+            llegadasPorDia: llegadasPorDia
         });
 
         // Fetch current assignments for this event
@@ -300,6 +320,21 @@ const AdminEvents = () => {
         e.preventDefault();
         if (assignForm.diasSeleccionados && assignForm.diasSeleccionados.length === 0) {
             alert('Debes seleccionar al menos un día.');
+            return;
+        }
+
+        const isMultiDay = assignForm.eventDays && assignForm.eventDays.length > 1;
+
+        // Validar que todos los días seleccionados tengan hora de llegada
+        if (isMultiDay) {
+            for (const day of assignForm.diasSeleccionados) {
+                if (!assignForm.llegadasPorDia?.[day]) {
+                    alert(`Debes especificar la hora de llegada para el día ${dayjs(day).format('DD/MM/YYYY')}`);
+                    return;
+                }
+            }
+        } else if (!assignForm.horaLlegada) {
+            alert('Debes especificar la hora de llegada.');
             return;
         }
         try {
@@ -329,7 +364,22 @@ const AdminEvents = () => {
             const res = await api.get(`/admin/events/${assignForm.eventId}/assignments`);
             setEventAssignments(res.data);
 
-            setAssignForm({ ...assignForm, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', pagoExtras: 0, horaLlegada: '', llegadasPorDia: {}, diasSeleccionados: [...(assignForm.eventDays || [])] });
+            // Reset form for next assignment in the same modal, keeping event defaults
+            const resetLlegadas = {};
+            (assignForm.eventDays || []).forEach(d => {
+                resetLlegadas[d] = currentEvent?.horaLlegada || '08:00';
+            });
+
+            setAssignForm({ 
+                ...assignForm, 
+                userId: '', 
+                rolAsignado: 'Técnico', 
+                pagoAsignado: '', 
+                pagoExtras: 0, 
+                horaLlegada: currentEvent?.horaLlegada || '08:00', 
+                llegadasPorDia: resetLlegadas, 
+                diasSeleccionados: [...(assignForm.eventDays || [])] 
+            });
             alert('Personal asignado exitosamente.');
         } catch (error) {
             console.error('Error assigning staff', error);
@@ -825,10 +875,10 @@ const AdminEvents = () => {
                                                                     </label>
                                                                     <input
                                                                         type="time"
-                                                                        disabled={!isChecked}
+                                                                        required={isChecked}
                                                                         value={llegadaVal}
                                                                         title="Hora llegada ese día"
-                                                                        className={`input-field text-xs py-1 px-2 w-28 ${!isChecked ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                                                        className={`input-field text-xs py-1 px-2 w-28 ${!isChecked ? 'opacity-30 cursor-not-allowed border-gray-200' : (llegadaVal ? 'border-primary' : 'border-red-400')}`}
                                                                         onChange={(e) => {
                                                                             const dias = { ...(assignForm.llegadasPorDia || {}), [day]: e.target.value };
                                                                             setAssignForm({ ...assignForm, llegadasPorDia: dias });
