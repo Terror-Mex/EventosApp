@@ -280,27 +280,13 @@ const AdminEvents = () => {
             }
         }
 
-        // Pre-fill per-day arrivals with the event's default or per-day times
+        // No pre-filling arrival times to force manual entry
         const llegadasPorDia = {};
-        try {
-            if (event.horarios) {
-                const hList = JSON.parse(event.horarios);
-                hList.forEach(h => {
-                    llegadasPorDia[h.fecha] = h.llegada || event.horaLlegada || '08:00';
-                });
-            }
-        } catch (err) {}
         
-        if (Object.keys(llegadasPorDia).length === 0) {
-            eventDays.forEach(day => {
-                llegadasPorDia[day] = event.horaLlegada || '08:00';
-            });
-        }
-
         setAssignForm({
             eventId: event.id, userId: '', rolAsignado: 'Técnico', pagoAsignado: '', 
             diasAsignados: eventDays.length, pagoExtras: 0, 
-            horaLlegada: event.horaLlegada || '08:00',
+            horaLlegada: '',
             eventDays: eventDays,
             diasSeleccionados: [...eventDays], // all days selected by default
             llegadasPorDia: llegadasPorDia
@@ -364,20 +350,15 @@ const AdminEvents = () => {
             const res = await api.get(`/admin/events/${assignForm.eventId}/assignments`);
             setEventAssignments(res.data);
 
-            // Reset form for next assignment in the same modal, keeping event defaults
-            const resetLlegadas = {};
-            (assignForm.eventDays || []).forEach(d => {
-                resetLlegadas[d] = currentEvent?.horaLlegada || '08:00';
-            });
-
+            // Reset form for next assignment in the same modal, keeping arrival times empty
             setAssignForm({ 
                 ...assignForm, 
                 userId: '', 
                 rolAsignado: 'Técnico', 
                 pagoAsignado: '', 
                 pagoExtras: 0, 
-                horaLlegada: currentEvent?.horaLlegada || '08:00', 
-                llegadasPorDia: resetLlegadas, 
+                horaLlegada: '', 
+                llegadasPorDia: {}, 
                 diasSeleccionados: [...(assignForm.eventDays || [])] 
             });
             alert('Personal asignado exitosamente.');
