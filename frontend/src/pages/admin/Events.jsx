@@ -962,10 +962,10 @@ const AdminEvents = () => {
                                                 </div>
                                                 <button
                                                     onClick={() => handleDeleteAssignment(asg.id)}
-                                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                                                        className="p-2 text-red-500 md:text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all md:opacity-0 md:group-hover:opacity-100 flex-shrink-0 ml-2"
                                                         title="Eliminar asignación"
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <Trash2 size={20} className="md:w-4 md:h-4" />
                                                     </button>
                                                 </div>
                                             ))}
