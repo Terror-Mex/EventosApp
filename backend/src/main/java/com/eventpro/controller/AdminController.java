@@ -337,133 +337,154 @@ public class AdminController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Error fetching checkins: " + e.getMessage());
         }
-    }
-
-    @PostMapping("/assignments")
+    }    @PostMapping("/assignments")
     public ResponseEntity<?> assignStaff(@RequestBody Map<String, Object> payload) {
-        Long userId = Long.parseLong(payload.get("userId").toString());
-        Long eventId = Long.parseLong(payload.get("eventId").toString());
-        String rolAsignado = payload.get("rolAsignado").toString();
-        Double pagoAsignado = Double.parseDouble(payload.get("pagoAsignado").toString());
-        Integer diasAsignados = Integer.parseInt(payload.get("diasAsignados").toString());
-        Double pagoExtras = payload.containsKey("pagoExtras") ? Double.parseDouble(payload.get("pagoExtras").toString()) : 0.0;
-        String diasSeleccionados = payload.containsKey("diasSeleccionados") ? payload.get("diasSeleccionados").toString() : null;
-        String horaLlegada = payload.containsKey("horaLlegada") ? payload.get("horaLlegada").toString() : null;
-        String llegadasPorDia = payload.containsKey("llegadasPorDia") ? payload.get("llegadasPorDia").toString() : null;
-
-        User user = userRepository.findById(userId).orElseThrow();
-        Event event = eventRepository.findById(eventId).orElseThrow();
-
-        if (assignmentRepository.findByUserAndEvent(user, event).isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Este trabajador ya se encuentra asignado a este evento."));
-        }
-
-        // Parse selected days for the new assignment
-        ObjectMapper mapper = new ObjectMapper();
-        List<String> newSelectedDays = new java.util.ArrayList<>();
         try {
-            if (diasSeleccionados != null && !diasSeleccionados.isEmpty()) {
-                newSelectedDays = mapper.readValue(diasSeleccionados, new TypeReference<List<String>>(){});
+            if (payload.get("userId") == null || payload.get("eventId") == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Falta el ID de usuario o evento."));
             }
-        } catch (Exception e) {}
 
-        // If no specific days selected, derive from event horarios or full date range
-        if (newSelectedDays.isEmpty()) {
+            Long userId = Long.parseLong(payload.get("userId").toString());
+            Long eventId = Long.parseLong(payload.get("eventId").toString());
+            String rolAsignado = payload.get("rolAsignado") != null ? payload.get("rolAsignado").toString() : "Técnico";
+            
+            Double pagoAsignado = 0.0;
+            if (payload.get("pagoAsignado") != null && !payload.get("pagoAsignado").toString().isEmpty()) {
+                pagoAsignado = Double.parseDouble(payload.get("pagoAsignado").toString());
+            }
+
+            Integer diasAsignados = 1;
+            if (payload.get("diasAsignados") != null && !payload.get("diasAsignados").toString().isEmpty()) {
+                diasAsignados = Integer.parseInt(payload.get("diasAsignados").toString());
+            }
+
+            Double pagoExtras = 0.0;
+            if (payload.containsKey("pagoExtras") && payload.get("pagoExtras") != null && !payload.get("pagoExtras").toString().isEmpty()) {
+                pagoExtras = Double.parseDouble(payload.get("pagoExtras").toString());
+            }
+
+            String diasSeleccionados = payload.containsKey("diasSeleccionados") ? payload.get("diasSeleccionados").toString() : null;
+            String horaLlegada = payload.containsKey("horaLlegada") ? (payload.get("horaLlegada") != null ? payload.get("horaLlegada").toString() : null) : null;
+            String llegadasPorDia = payload.containsKey("llegadasPorDia") ? (payload.get("llegadasPorDia") != null ? payload.get("llegadasPorDia").toString() : null) : null;
+
+            User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            Event event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+
+            if (assignmentRepository.findByUserAndEvent(user, event).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Este trabajador ya se encuentra asignado a este evento."));
+            }
+
+            // Parse selected days for the new assignment
+            ObjectMapper mapper = new ObjectMapper();
+            List<String> newSelectedDays = new java.util.ArrayList<>();
             try {
-                if (event.getHorarios() != null && !event.getHorarios().isEmpty()) {
-                    List<Map<String, String>> hList = mapper.readValue(event.getHorarios(), new TypeReference<List<Map<String, String>>>(){});
-                    for (Map<String, String> h : hList) {
-                        newSelectedDays.add(h.get("fecha"));
-                    }
+                if (diasSeleccionados != null && !diasSeleccionados.isEmpty() && !diasSeleccionados.equals("[]")) {
+                    newSelectedDays = mapper.readValue(diasSeleccionados, new TypeReference<List<String>>(){});
                 }
             } catch (Exception e) {}
+
+            // If no specific days selected, derive from event horarios or full date range
             if (newSelectedDays.isEmpty()) {
-                LocalDate d = event.getFechaInicio();
-                while (!d.isAfter(event.getFechaFin())) {
-                    newSelectedDays.add(d.toString());
-                    d = d.plusDays(1);
-                }
-            }
-        }
-
-        // Check for schedule conflict based on specific selected days
-        List<Assignment> existingAssignments = assignmentRepository.findByUser(user);
-
-        // Find overlapping days and check for hour overlaps
-        for (Assignment existingAssignment : existingAssignments) {
-            Event existingEvent = existingAssignment.getEvent();
-            if ("FINALIZADO".equals(existingEvent.getEstado()) || "CANCELADO".equals(existingEvent.getEstado())) {
-                continue;
-            }
-
-            // Get existing assignment's selected days and their hours
-            List<String> existingSelectedDays = new java.util.ArrayList<>();
-            try {
-                if (existingAssignment.getDiasSeleccionados() != null && !existingAssignment.getDiasSeleccionados().isEmpty()) {
-                    existingSelectedDays = mapper.readValue(existingAssignment.getDiasSeleccionados(), new TypeReference<List<String>>(){});
-                }
-            } catch (Exception e) {}
-
-            if (existingSelectedDays.isEmpty()) {
                 try {
-                    if (existingEvent.getHorarios() != null && !existingEvent.getHorarios().isEmpty()) {
-                        List<Map<String, String>> hList = mapper.readValue(existingEvent.getHorarios(), new TypeReference<List<Map<String, String>>>(){});
+                    if (event.getHorarios() != null && !event.getHorarios().isEmpty()) {
+                        List<Map<String, String>> hList = mapper.readValue(event.getHorarios(), new TypeReference<List<Map<String, String>>>(){});
                         for (Map<String, String> h : hList) {
-                            existingSelectedDays.add(h.get("fecha"));
+                            newSelectedDays.add(h.get("fecha"));
                         }
                     }
                 } catch (Exception e) {}
-                if (existingSelectedDays.isEmpty()) {
-                    LocalDate d = existingEvent.getFechaInicio();
-                    while (!d.isAfter(existingEvent.getFechaFin())) {
-                        existingSelectedDays.add(d.toString());
+                if (newSelectedDays.isEmpty()) {
+                    LocalDate d = event.getFechaInicio();
+                    while (!d.isAfter(event.getFechaFin())) {
+                        newSelectedDays.add(d.toString());
                         d = d.plusDays(1);
                     }
                 }
             }
 
-            // Check for overlap
-            for (String newDay : newSelectedDays) {
-                if (existingSelectedDays.contains(newDay)) {
-                    // Overlaps on date, now check hours
-                    LocalTime existingStart = existingEvent.getHoraInicio();
-                    LocalTime existingEnd = existingEvent.getHoraFin();
-                    LocalTime newStart = event.getHoraInicio();
-                    LocalTime newEnd = event.getHoraFin();
+            // Check for schedule conflict based on specific selected days
+            List<Assignment> existingAssignments = assignmentRepository.findByUser(user);
 
-                    // Standard overlap check: (StartA < EndB) and (EndA > StartB)
-                    if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
-                        return ResponseEntity.badRequest().body(Map.of("message",
-                            "Conflicto: El trabajador ya est\u00e1 asignado al evento '" + existingEvent.getNombre() + 
-                            "' el d\u00eda " + newDay + " en un horario que traslapa (" + existingStart + " - " + existingEnd + ")."));
+            for (Assignment existingAssignment : existingAssignments) {
+                Event existingEvent = existingAssignment.getEvent();
+                if ("FINALIZADO".equals(existingEvent.getEstado()) || "CANCELADO".equals(existingEvent.getEstado())) {
+                    continue;
+                }
+
+                // Get existing assignment's selected days
+                List<String> existingSelectedDays = new java.util.ArrayList<>();
+                try {
+                    if (existingAssignment.getDiasSeleccionados() != null && !existingAssignment.getDiasSeleccionados().isEmpty() && !existingAssignment.getDiasSeleccionados().equals("[]")) {
+                        existingSelectedDays = mapper.readValue(existingAssignment.getDiasSeleccionados(), new TypeReference<List<String>>(){});
+                    }
+                } catch (Exception e) {}
+
+                if (existingSelectedDays.isEmpty()) {
+                    try {
+                        if (existingEvent.getHorarios() != null && !existingEvent.getHorarios().isEmpty()) {
+                            List<Map<String, String>> hList = mapper.readValue(existingEvent.getHorarios(), new TypeReference<List<Map<String, String>>>(){});
+                            for (Map<String, String> h : hList) {
+                                existingSelectedDays.add(h.get("fecha"));
+                            }
+                        }
+                    } catch (Exception e) {}
+                    if (existingSelectedDays.isEmpty()) {
+                        LocalDate d = existingEvent.getFechaInicio();
+                        while (!d.isAfter(existingEvent.getFechaFin())) {
+                            existingSelectedDays.add(d.toString());
+                            d = d.plusDays(1);
+                        }
+                    }
+                }
+
+                // Check for overlap only if they have shared days
+                for (String newDay : newSelectedDays) {
+                    if (existingSelectedDays.contains(newDay)) {
+                        LocalTime existingStart = existingEvent.getHoraInicio();
+                        LocalTime existingEnd = existingEvent.getHoraFin();
+                        LocalTime newStart = event.getHoraInicio();
+                        LocalTime newEnd = event.getHoraFin();
+
+                        if (existingStart == null || existingEnd == null || newStart == null || newEnd == null) continue;
+
+                        // Standard overlap check: (StartA < EndB) and (EndA > StartB)
+                        if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
+                            return ResponseEntity.badRequest().body(Map.of("message",
+                                "Conflicto el d\u00eda " + newDay + ": " + user.getNombre() + 
+                                " ya est\u00e1 asignado a '" + existingEvent.getNombre() + 
+                                "' de " + existingStart + " a " + existingEnd + ". No se puede traslapar con el horario de este evento (" + newStart + " - " + newEnd + ")."));
+                        }
                     }
                 }
             }
-        }
 
-        Assignment assignment = new Assignment();
-        assignment.setUser(user);
-        assignment.setEvent(event);
-        assignment.setRolAsignado(rolAsignado);
-        assignment.setHoraLlegada(horaLlegada);
-        assignment.setPagoAsignado(pagoAsignado);
-        assignment.setDiasAsignados(diasAsignados);
-        assignment.setPagoExtras(pagoExtras);
-        assignment.setLlegadasPorDia(llegadasPorDia);
-        try {
-            assignment.setDiasSeleccionados(mapper.writeValueAsString(newSelectedDays));
+            Assignment assignment = new Assignment();
+            assignment.setUser(user);
+            assignment.setEvent(event);
+            assignment.setRolAsignado(rolAsignado);
+            assignment.setHoraLlegada(horaLlegada);
+            assignment.setPagoAsignado(pagoAsignado);
+            assignment.setDiasAsignados(newSelectedDays.size() > 0 ? newSelectedDays.size() : diasAsignados);
+            assignment.setPagoExtras(pagoExtras);
+            assignment.setLlegadasPorDia(llegadasPorDia);
+            try {
+                assignment.setDiasSeleccionados(mapper.writeValueAsString(newSelectedDays));
+            } catch (Exception e) {
+                assignment.setDiasSeleccionados(diasSeleccionados);
+            }
+
+            Assignment savedAssignment = assignmentRepository.save(assignment);
+            
+            // Notify the worker
+            if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+                fcmService.sendPushNotification(user.getFcmToken(), "Nueva Asignaci\u00f3n", "Has sido asignado a un nuevo evento: " + event.getNombre(), "/worker/events");
+            }
+
+            return ResponseEntity.ok(savedAssignment);
         } catch (Exception e) {
-            assignment.setDiasSeleccionados(diasSeleccionados);
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Error interno al procesar la asignaci\u00f3n: " + e.getMessage()));
         }
-
-        Assignment savedAssignment = assignmentRepository.save(assignment);
-        
-        // Notify the worker
-        if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
-            fcmService.sendPushNotification(user.getFcmToken(), "Nueva Asignación", "Has sido asignado a un nuevo evento: " + event.getNombre(), "/worker/events");
-        }
-
-        return ResponseEntity.ok(savedAssignment);
     }
 
     @PutMapping("/assignments/{id}/pagar")
