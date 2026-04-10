@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CalendarDays, LogIn } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const { register, handleSubmit, setError, formState: { errors } } = useForm();
+    const [generalError, setGeneralError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const { login, user } = useAuth();
@@ -17,21 +17,28 @@ const Login = () => {
         return <Navigate to={user.rol === 'ADMIN' ? '/admin/dashboard' : '/worker/dashboard'} replace />;
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
+    const onSubmit = async (data) => {
+        setGeneralError('');
         setIsLoading(true);
 
         try {
-            const userData = await login(email, password);
+            const userData = await login(data.email, data.password);
             if (userData.rol === 'ADMIN') {
                 navigate('/admin/dashboard');
             } else {
                 navigate('/worker/dashboard');
             }
         } catch (err) {
-            setError('Credenciales super incorrectas. Intenta de nuevo.');
-            console.error(err);
+            const errData = err.response?.data;
+            if (errData?.errors) {
+                Object.keys(errData.errors).forEach(key => {
+                    setError(key, { type: 'manual', message: errData.errors[key] });
+                });
+            } else if (errData?.error) {
+                setGeneralError(errData.error);
+            } else {
+                setGeneralError('Credenciales incorrectas. Intenta de nuevo.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -55,8 +62,8 @@ const Login = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error && (
+                    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                        {generalError && (
                             <div className="bg-red-50 border-l-4 border-red-400 p-4">
                                 <div className="flex">
                                     <div className="flex-shrink-0">
@@ -65,7 +72,7 @@ const Login = () => {
                                         </svg>
                                     </div>
                                     <div className="ml-3">
-                                        <p className="text-sm text-red-700">{error}</p>
+                                        <p className="text-sm text-red-700">{generalError}</p>
                                     </div>
                                 </div>
                             </div>
@@ -78,15 +85,13 @@ const Login = () => {
                             <div className="mt-1">
                                 <input
                                     id="email"
-                                    name="email"
                                     type="email"
                                     autoComplete="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    {...register("email")}
                                     className="input-field"
                                     placeholder="ej. carlos@eventpro.com"
                                 />
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                             </div>
                         </div>
 
@@ -97,15 +102,13 @@ const Login = () => {
                             <div className="mt-1">
                                 <input
                                     id="password"
-                                    name="password"
                                     type="password"
                                     autoComplete="current-password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    {...register("password")}
                                     className="input-field"
                                     placeholder="••••••••"
                                 />
+                                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                             </div>
                         </div>
 

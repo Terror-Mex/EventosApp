@@ -7,8 +7,13 @@ import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { es } from 'date-fns/locale/es';
 import NewPlaceAutocomplete from '../../components/NewPlaceAutocomplete';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 registerLocale('es', es);
+
+const XIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+);
 
 const AdminEvents = () => {
     const [events, setEvents] = useState([]);
@@ -23,6 +28,40 @@ const AdminEvents = () => {
     const [currentEvent, setCurrentEvent] = useState(null);
     const [editingId, setEditingId] = useState(null);
 
+    const { register, handleSubmit, setError, setValue, control, reset, watch, formState: { errors } } = useForm({
+        defaultValues: {
+            nombre: '',
+            numeroEvento: '',
+            fechaInicio: new Date(),
+            fechaFin: new Date(),
+            horaInicio: '09:00',
+            horaFin: '18:00',
+            ubicacion: '',
+            latitud: null,
+            longitud: null,
+            descripcion: '',
+            cabinaList: [{ tipo: 'Media cabina', cant: 1 }],
+            receptoresList: [{ tipo: 'normales', cant: 50 }],
+            horariosList: [{ fecha: dayjs().format('YYYY-MM-DD'), inicio: '09:00', fin: '18:00' }],
+            equipoExtras: '',
+            archivoAdjunto: ''
+        }
+    });
+    const [generalError, setGeneralError] = useState('');
+
+    const { fields: horariosFields, append: appendHorario, remove: removeHorario } = useFieldArray({
+        control,
+        name: "horariosList"
+    });
+    const { fields: cabinaFields, append: appendCabina, remove: removeCabina } = useFieldArray({
+        control,
+        name: "cabinaList"
+    });
+    const { fields: receptoresFields, append: appendReceptor, remove: removeReceptor } = useFieldArray({
+        control,
+        name: "receptoresList"
+    });
+
     const isHistoryEvent = (event) => {
         if (event.estado !== 'FINALIZADO') return false;
         try {
@@ -32,13 +71,6 @@ const AdminEvents = () => {
             return true; // Fallback to history if date is invalid
         }
     };
-
-    // Form states
-    const [eventForm, setEventForm] = useState({
-        nombre: '', numeroEvento: '', fechaInicio: new Date(), fechaFin: new Date(), horaInicio: '09:00', horaFin: '18:00',
-        horaLlegada: '08:00', ubicacion: '', latitud: null, longitud: null, descripcion: '',
-        cabina: 'Media cabina', cantCabina: 1, receptores: 'normales', cantReceptores: 50, equipoExtras: '', archivoAdjunto: ''
-    });
 
     const [assignForm, setAssignForm] = useState({
         eventId: '', userId: '', rolAsignado: '', pagoAsignado: '', diasAsignados: 1, pagoExtras: 0, horaLlegada: ''
@@ -77,26 +109,25 @@ const AdminEvents = () => {
     };
 
     const handleOpenEventModal = (event = null) => {
+        setGeneralError('');
         if (event) {
-            let parsedCabinas = [{ tipo: event.cabina || 'Media cabina', cant: event.cantCabina || 1 }];
-            try { if (event.cabina?.startsWith('[')) parsedCabinas = JSON.parse(event.cabina); } catch (e) { }
+            let parsedCabinas = [];
+            try { parsedCabinas = event.cabina ? JSON.parse(event.cabina) : [{ tipo: 'Media cabina', cant: 1 }]; } catch (e) { parsedCabinas = [{ tipo: event.cabina || 'Media cabina', cant: event.cantCabina || 1 }]; }
             parsedCabinas = parsedCabinas.map(c => c.tipo === 'cabina completa' ? { ...c, tipo: 'Cabina completa' } : c);
 
-            let parsedReceptores = [{ tipo: event.receptores || 'normales', cant: event.cantReceptores || 50 }];
-            try { if (event.receptores?.startsWith('[')) parsedReceptores = JSON.parse(event.receptores); } catch (e) { }
+            let parsedReceptores = [];
+            try { parsedReceptores = event.receptores ? JSON.parse(event.receptores) : [{ tipo: 'normales', cant: 50 }]; } catch (e) { parsedReceptores = [{ tipo: event.receptores || 'normales', cant: event.cantReceptores || 50 }]; }
 
             let parsedHorarios = [];
-            try { if (event.horarios) parsedHorarios = JSON.parse(event.horarios); } catch (e) { }
+            try { parsedHorarios = event.horarios ? JSON.parse(event.horarios) : []; } catch (e) { }
 
             if (parsedHorarios.length === 0) {
-                // Fallback a generar 1 bloque por cada día del evento si viene de formato viejo
                 const startDate = dayjs(event.fechaInicio, 'YYYY-MM-DD');
                 const endDate = dayjs(event.fechaFin, 'YYYY-MM-DD');
                 let currDate = startDate;
                 while (currDate.isBefore(endDate) || currDate.isSame(endDate, 'day')) {
                     parsedHorarios.push({
                         fecha: currDate.format('YYYY-MM-DD'),
-                        llegada: event.horaLlegada || '08:00',
                         inicio: event.horaInicio || '09:00',
                         fin: event.horaFin || '18:00'
                     });
@@ -104,25 +135,41 @@ const AdminEvents = () => {
                 }
             }
 
-            setEventForm({
-                ...event,
-                fechaInicio: dayjs(event.fechaInicio, 'YYYY-MM-DD').toDate(),
-                fechaFin: dayjs(event.fechaFin, 'YYYY-MM-DD').toDate(),
+            reset({
+                nombre: event.nombre || '',
                 numeroEvento: event.numeroEvento || '',
-                archivoAdjunto: event.archivoAdjunto || '',
+                fechaInicio: event.fechaInicio ? dayjs(event.fechaInicio +"T12:00:00").toDate() : new Date(),
+                fechaFin: event.fechaFin ? dayjs(event.fechaFin +"T12:00:00").toDate() : new Date(),
+                horaInicio: event.horaInicio || '09:00',
+                horaFin: event.horaFin || '18:00',
+                ubicacion: event.ubicacion || '',
+                latitud: event.latitud || null,
+                longitud: event.longitud || null,
+                descripcion: event.descripcion || '',
                 cabinaList: parsedCabinas,
                 receptoresList: parsedReceptores,
-                horariosList: parsedHorarios
+                horariosList: parsedHorarios,
+                equipoExtras: event.equipoExtras || '',
+                archivoAdjunto: event.archivoAdjunto || ''
             });
             setEditingId(event.id);
         } else {
-            setEventForm({
-                nombre: '', numeroEvento: '', fechaInicio: new Date(), fechaFin: new Date(), horaInicio: '09:00', horaFin: '18:00',
-                horaLlegada: '08:00', ubicacion: '', latitud: null, longitud: null, descripcion: '',
+            reset({
+                nombre: '',
+                numeroEvento: '',
+                fechaInicio: new Date(),
+                fechaFin: new Date(),
+                horaInicio: '09:00',
+                horaFin: '18:00',
+                ubicacion: '',
+                latitud: null,
+                longitud: null,
+                descripcion: '',
                 cabinaList: [{ tipo: 'Media cabina', cant: 1 }],
                 receptoresList: [{ tipo: 'normales', cant: 50 }],
-                horariosList: [{ fecha: dayjs().format('YYYY-MM-DD'), llegada: '08:00', inicio: '09:00', fin: '18:00' }],
-                equipoExtras: '', archivoAdjunto: ''
+                horariosList: [{ fecha: dayjs().format('YYYY-MM-DD'), inicio: '09:00', fin: '18:00' }],
+                equipoExtras: '',
+                archivoAdjunto: ''
             });
             setEditingId(null);
         }
@@ -130,7 +177,8 @@ const AdminEvents = () => {
     };
 
     const handleDateChange = (type, date) => {
-        const newForm = { ...eventForm, [type]: date };
+        setValue(type, date);
+        const newForm = { ...watch(), [type]: date }; // Use watch to get current form values
 
         try {
             const startStr = dayjs(newForm.fechaInicio).format('YYYY-MM-DD');
@@ -141,30 +189,27 @@ const AdminEvents = () => {
             if (startDate.isValid() && endDate.isValid() && (startDate.isBefore(endDate) || startDate.isSame(endDate, 'day'))) {
                 let currDate = startDate;
                 const newHorarios = [];
-                // Intentar preservar horarios de días previos si la fecha coincide
+                const currentHorarios = watch('horariosList') || [];
+
                 while (currDate.isBefore(endDate) || currDate.isSame(endDate, 'day')) {
                     const dateStr = currDate.format('YYYY-MM-DD');
-                    const existing = eventForm.horariosList?.find(h => h.fecha === dateStr);
+                    const existing = currentHorarios.find(h => h.fecha === dateStr);
 
                     if (existing) {
                         newHorarios.push(existing);
                     } else {
-                        // Usar los valores del primer bloque si existen, o defaults
-                        const base = eventForm.horariosList?.[0] || {};
+                        const base = currentHorarios[0] || { inicio: '09:00', fin: '18:00' };
                         newHorarios.push({
                             fecha: dateStr,
-                            llegada: base.llegada || '08:00',
-                            inicio: base.inicio || '09:00',
-                            fin: base.fin || '18:00'
+                            inicio: base.inicio,
+                            fin: base.fin
                         });
                     }
                     currDate = currDate.add(1, 'day');
                 }
-                newForm.horariosList = newHorarios;
+                setValue('horariosList', newHorarios);
             }
         } catch (error) { console.error('Error regen horarios', error) }
-
-        setEventForm(newForm);
     };
 
     const handleFileUpload = async (e) => {
@@ -179,7 +224,7 @@ const AdminEvents = () => {
             const response = await api.post('/admin/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setEventForm({ ...eventForm, archivoAdjunto: response.data.fileName });
+            setValue('archivoAdjunto', response.data.fileName);
             alert('Archivo subido correctamente');
         } catch (error) {
             console.error('Error subiendo archivo', error);
@@ -189,60 +234,69 @@ const AdminEvents = () => {
         }
     };
 
-    const handleEventSubmit = async (e) => {
-        e.preventDefault();
+    const handleEventSubmit = async (data) => {
+        setGeneralError('');
         try {
-            const fInicio = dayjs(eventForm.fechaInicio).format('YYYY-MM-DD');
-            const fFin = dayjs(eventForm.fechaFin).format('YYYY-MM-DD');
-
-            if (!fInicio || !fFin) {
-                alert('Error: Forma de fecha inválida.');
-                return;
-            }
-
-            if (!eventForm.nombre || eventForm.nombre.trim() === '') {
-                alert('Error: El nombre del evento es obligatorio.');
-                return;
-            }
-
-            if (!eventForm.latitud || !eventForm.longitud) {
-                alert('Error: La ubicación debe ser obligatoriamente seleccionada desde las sugerencias de Google Maps. No escribas la dirección libremente, esto es para garantizar las coordenadas de la Geocerca.');
-                return;
-            }
-
             const payload = {
-                nombre: eventForm.nombre.trim(),
-                numeroEvento: eventForm.numeroEvento || '',
-                fechaInicio: fInicio,
-                fechaFin: fFin,
-                horaInicio: eventForm.horariosList?.[0]?.inicio || '09:00',
-                horaFin: eventForm.horariosList?.[0]?.fin || '18:00',
-                horaLlegada: eventForm.horariosList?.[0]?.llegada || '08:00',
-                ubicacion: eventForm.ubicacion,
-                latitud: eventForm.latitud,
-                longitud: eventForm.longitud,
-                descripcion: eventForm.descripcion,
-                cabina: JSON.stringify(eventForm.cabinaList || []),
-                cantCabina: eventForm.cabinaList?.reduce((acc, c) => acc + (parseInt(c.cant) || 0), 0) || 0,
-                receptores: JSON.stringify(eventForm.receptoresList || []),
-                cantReceptores: eventForm.receptoresList?.reduce((acc, c) => acc + (parseInt(c.cant) || 0), 0) || 0,
-                horarios: JSON.stringify(eventForm.horariosList || []),
-                equipoExtras: eventForm.equipoExtras || '',
-                archivoAdjunto: eventForm.archivoAdjunto || ''
+                ...data,
+                fechaInicio: dayjs(data.fechaInicio).format('YYYY-MM-DD'),
+                fechaFin: dayjs(data.fechaFin).format('YYYY-MM-DD'),
+                horaInicio: data.horariosList?.[0]?.inicio || '09:00',
+                horaFin: data.horariosList?.[data.horariosList.length - 1]?.fin || '18:00',
+                horarios: JSON.stringify(data.horariosList || []),
+                cabina: JSON.stringify(data.cabinaList || []),
+                cantCabina: data.cabinaList?.reduce((acc, c) => acc + (parseInt(c.cant) || 0), 0) || 0,
+                receptores: JSON.stringify(data.receptoresList || []),
+                cantReceptores: data.receptoresList?.reduce((acc, c) => acc + (parseInt(c.cant) || 0), 0) || 0,
             };
 
             if (editingId) {
+                const eventoOriginal = events.find(e => e.id === editingId);
+                const fechasCambiaron = eventoOriginal?.fechaInicio !== dayjs(data.fechaInicio).format('YYYY-MM-DD') ||
+                    eventoOriginal?.fechaFin !== dayjs(data.fechaFin).format('YYYY-MM-DD');
+
+                if (fechasCambiaron) {
+                    const confirmar = window.confirm(
+                        "⚠️ Las fechas del evento cambiaron. Revisa los días asignados del personal"
+                    );
+                    if (!confirmar) return;
+                }
+
                 await api.put(`/admin/events/${editingId}`, payload);
             } else {
                 await api.post('/admin/events', payload);
             }
 
+            reset({
+                nombre: '',
+                numeroEvento: '',
+                fechaInicio: new Date(),
+                fechaFin: new Date(),
+                horaInicio: '09:00',
+                horaFin: '18:00',
+                ubicacion: '',
+                latitud: null,
+                longitud: null,
+                descripcion: '',
+                cabinaList: [{ tipo: 'Media cabina', cant: 1 }],
+                receptoresList: [{ tipo: 'normales', cant: 50 }],
+                horariosList: [{ fecha: dayjs().format('YYYY-MM-DD'), inicio: '09:00', fin: '18:00' }],
+                equipoExtras: '',
+                archivoAdjunto: ''
+            });
             setIsEventModalOpen(false);
             fetchData();
         } catch (error) {
-            console.error('Error al guardar el evento:', error);
-            const errorMsg = error.response?.data?.message || error.message;
-            alert(`Error al guardar el evento: ${errorMsg}`);
+            const errData = error.response?.data;
+            if (errData?.errors) {
+                Object.keys(errData.errors).forEach(key => {
+                    setError(key, { type: 'manual', message: errData.errors[key] });
+                });
+            } else if (errData?.error) {
+                setGeneralError(errData.error);
+            } else {
+                setGeneralError('Ocurrió un error inesperado.');
+            }
         }
     };
 
@@ -262,6 +316,7 @@ const AdminEvents = () => {
     const handleOpenAssignModal = async (e, event) => {
         e.stopPropagation(); // Prevent opening detail modal
         setCurrentEvent(event);
+        setGeneralError('');
 
         // Parse event days for day selection
         let eventDays = [];
@@ -304,8 +359,9 @@ const AdminEvents = () => {
 
     const handleAssignSubmit = async (e) => {
         e.preventDefault();
+        setGeneralError('');
         if (assignForm.diasSeleccionados && assignForm.diasSeleccionados.length === 0) {
-            alert('Debes seleccionar al menos un día.');
+            setGeneralError('Debes seleccionar al menos un día.');
             return;
         }
 
@@ -315,12 +371,12 @@ const AdminEvents = () => {
         if (isMultiDay) {
             for (const day of assignForm.diasSeleccionados) {
                 if (!assignForm.llegadasPorDia?.[day]) {
-                    alert(`Debes especificar la hora de llegada para el día ${dayjs(day).format('DD/MM/YYYY')}`);
+                    setGeneralError(`Debes especificar la hora de llegada para el día ${dayjs(day).format('DD/MM/YYYY')}`);
                     return;
                 }
             }
         } else if (!assignForm.horaLlegada) {
-            alert('Debes especificar la hora de llegada.');
+            setGeneralError('Debes especificar la hora de llegada.');
             return;
         }
         try {
@@ -363,9 +419,16 @@ const AdminEvents = () => {
             });
             alert('Personal asignado exitosamente.');
         } catch (error) {
-            console.error('Error assigning staff', error);
-            const msg = error.response?.data?.message || 'Error al asignar personal.';
-            alert(msg);
+            const errData = error.response?.data;
+            if (errData?.errors) {
+                Object.keys(errData.errors).forEach(key => {
+                    setError(key, { type: 'manual', message: errData.errors[key] });
+                });
+            } else if (errData?.error) {
+                setGeneralError(errData.error);
+            } else {
+                setGeneralError('Ocurrió un error inesperado.');
+            }
         }
     };
 
@@ -558,7 +621,8 @@ const AdminEvents = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleEventSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                        <form noValidate onSubmit={handleSubmit(handleEventSubmit)} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                            {generalError && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-lg">{generalError}</p>}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div className="p-3 rounded-xl border border-sidebar/20 bg-sidebar/5 shadow-sm col-span-1 md:col-span-3">
                                     <label className="block text-xs font-bold text-sidebar uppercase mb-1 tracking-wide">Nombre o Título del Evento</label>
@@ -566,10 +630,9 @@ const AdminEvents = () => {
                                         type="text"
                                         className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-lg font-bold focus:border-sidebar outline-none transition-all"
                                         placeholder="Ej: Boda Civil"
-                                        required
-                                        value={eventForm.nombre}
-                                        onChange={(e) => setEventForm({ ...eventForm, nombre: e.target.value })}
+                                        {...register("nombre")}
                                     />
+                                    {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
                                 </div>
                                 <div className="p-3 rounded-xl border border-sidebar/20 bg-sidebar/5 shadow-sm col-span-1 md:col-span-1">
                                     <label className="block text-xs font-bold text-sidebar uppercase mb-1 tracking-wide">Núm. Evento</label>
@@ -577,63 +640,66 @@ const AdminEvents = () => {
                                         type="text"
                                         className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-lg font-bold focus:border-sidebar outline-none transition-all text-center"
                                         placeholder="EV-001"
-                                        required
-                                        value={eventForm.numeroEvento}
-                                        onChange={(e) => setEventForm({ ...eventForm, numeroEvento: e.target.value })}
+                                        {...register("numeroEvento")}
                                     />
+                                    {errors.numeroEvento && <p className="text-red-500 text-xs mt-1">{errors.numeroEvento.message}</p>}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex flex-col">
                                     <label className="label">Fecha Inicio</label>
-                                    <DatePicker
-                                        selected={eventForm.fechaInicio}
-                                        onChange={(date) => handleDateChange('fechaInicio', date)}
-                                        dateFormat="dd/MM/yyyy"
-                                        locale="es"
-                                        className="input-field w-full"
-                                        required
+                                    <Controller
+                                        control={control}
+                                        name="fechaInicio"
+                                        render={({ field }) => (
+                                            <DatePicker
+                                                selected={field.value}
+                                                onChange={(date) => handleDateChange('fechaInicio', date)}
+                                                dateFormat="dd/MM/yyyy"
+                                                locale="es"
+                                                className="input-field w-full"
+                                            />
+                                        )}
                                     />
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="label">Fecha Fin</label>
-                                    <DatePicker
-                                        selected={eventForm.fechaFin}
-                                        onChange={(date) => handleDateChange('fechaFin', date)}
-                                        dateFormat="dd/MM/yyyy"
-                                        locale="es"
-                                        className="input-field w-full"
-                                        required
-                                        minDate={eventForm.fechaInicio}
+                                    <Controller
+                                        control={control}
+                                        name="fechaFin"
+                                        render={({ field }) => (
+                                            <DatePicker
+                                                selected={field.value}
+                                                onChange={(date) => handleDateChange('fechaFin', date)}
+                                                dateFormat="dd/MM/yyyy"
+                                                locale="es"
+                                                className="input-field w-full"
+                                                minDate={watch("fechaInicio")}
+                                            />
+                                        )}
                                     />
                                 </div>
                             </div>
 
                             <div className="bg-accent/10 p-4 rounded-lg border border-accent/20">
                                 <h4 className="text-sm font-bold text-sidebar mb-3 flex items-center tracking-wide uppercase">
-                                    <Clock size={16} className="mr-2" /> HORARIOS POR DÍA ({eventForm.horariosList?.length || 1} {eventForm.horariosList?.length === 1 ? 'Día' : 'Días'})
+                                    <Clock size={16} className="mr-2" /> HORARIOS POR DÍA ({horariosFields.length} {horariosFields.length === 1 ? 'Día' : 'Días'})
                                 </h4>
                                 <div className="space-y-4">
-                                    {eventForm.horariosList?.map((horario, index) => (
-                                        <div key={`h-${index}`} className="bg-white p-3 rounded-lg border border-sidebar/10 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                                    {horariosFields.map((item, index) => (
+                                        <div key={item.id} className="bg-white p-3 rounded-lg border border-sidebar/10 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                                             <div className="font-bold text-sm text-sidebar mb-1 sm:mb-0 pb-1 sm:pb-2 border-b sm:border-b-0 border-sidebar/10 flex items-center">
                                                 <CalendarDays size={14} className="mr-1.5" />
-                                                {dayjs(horario.fecha, 'YYYY-MM-DD').format('DD/MM/YYYY')}
+                                                {dayjs(watch(`horariosList.${index}.fecha`)).format('DD/MM/YYYY')}
                                             </div>
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 mb-1 block">Inicio</label>
-                                                <input type="time" required className="input-field bg-accent/10 border-accent/30 text-sidebar font-semibold text-sm p-1.5" value={horario.inicio} onChange={(e) => {
-                                                    const newList = eventForm.horariosList.map((h, i) => i === index ? { ...h, inicio: e.target.value } : h);
-                                                    setEventForm({ ...eventForm, horariosList: newList });
-                                                }} />
+                                                <input type="time" {...register(`horariosList.${index}.inicio`)} className="input-field bg-accent/10 border-accent/30 text-sidebar font-semibold text-sm p-1.5" />
                                             </div>
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 mb-1 block">Fin</label>
-                                                <input type="time" required className="input-field bg-accent/10 border-accent/30 text-sidebar font-semibold text-sm p-1.5" value={horario.fin} onChange={(e) => {
-                                                    const newList = eventForm.horariosList.map((h, i) => i === index ? { ...h, fin: e.target.value } : h);
-                                                    setEventForm({ ...eventForm, horariosList: newList });
-                                                }} />
+                                                <input type="time" {...register(`horariosList.${index}.fin`)} className="input-field bg-accent/10 border-accent/30 text-sidebar font-semibold text-sm p-1.5" />
                                             </div>
                                         </div>
                                     ))}
@@ -642,20 +708,25 @@ const AdminEvents = () => {
 
                             <div>
                                 <label className="label">Ubicación</label>
-                                <NewPlaceAutocomplete
-                                    value={eventForm.ubicacion}
-                                    onPlaceSelected={(place) => {
-                                        setEventForm({
-                                            ...eventForm,
-                                            ubicacion: place.address || '',
-                                            latitud: place.lat || null,
-                                            longitud: place.lng || null
-                                        });
-                                    }}
-                                    className="input-field w-full"
-                                    required={true}
-                                    placeholder="Buscar dirección o nombre del lugar (Ej. México)..."
+                                <Controller
+                                    control={control}
+                                    name="ubicacion"
+                                    render={({ field }) => (
+                                        <NewPlaceAutocomplete
+                                            value={field.value}
+                                            onPlaceSelected={(place) => {
+                                                setValue("ubicacion", place.address, { shouldValidate: true });
+                                                setValue("latitud", place.lat);
+                                                setValue("longitud", place.lng);
+                                            }}
+                                            className="input-field w-full"
+                                            placeholder="Buscar dirección o nombre del lugar (Ej. México)..."
+                                        />
+                                    )}
                                 />
+                                <input type="hidden" {...register("latitud")} />
+                                <input type="hidden" {...register("longitud")} />
+                                {errors.ubicacion && <p className="text-red-500 text-xs mt-1">{errors.ubicacion.message}</p>}
                             </div>
 
                             <div className="bg-accent/10 p-4 rounded-lg border border-accent/20">
@@ -666,32 +737,23 @@ const AdminEvents = () => {
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <label className="label mb-0">Cabinas</label>
-                                            <button type="button" onClick={() => setEventForm({ ...eventForm, cabinaList: [...(eventForm.cabinaList || []), { tipo: 'Media cabina', cant: 1 }] })} className="text-sidebar hover:text-accent transition-colors flex items-center text-xs font-bold">
+                                            <button type="button" onClick={() => appendCabina({ tipo: 'Media cabina', cant: 1 })} className="text-sidebar hover:text-accent transition-colors flex items-center text-xs font-bold">
                                                 <Plus size={14} className="mr-1" /> Añadir
                                             </button>
                                         </div>
-                                        {eventForm.cabinaList?.map((cab, index) => (
-                                            <div key={`cab-${index}`} className="flex gap-2 items-start relative group">
+                                        {cabinaFields.map((item, index) => (
+                                            <div key={item.id} className="flex gap-2 items-start relative group">
                                                 <div className="flex-1">
-                                                    <select className="input-field" value={cab.tipo} onChange={(e) => {
-                                                        const newCabinas = (eventForm.cabinaList || []).map((c, i) => i === index ? { ...c, tipo: e.target.value } : c);
-                                                        setEventForm({ ...eventForm, cabinaList: newCabinas });
-                                                    }}>
+                                                    <select className="input-field" {...register(`cabinaList.${index}.tipo`)}>
                                                         <option value="Media cabina">Media cabina</option>
                                                         <option value="Cabina completa">Cabina completa</option>
                                                     </select>
                                                 </div>
                                                 <div className="w-20">
-                                                    <input type="number" min="0" className="input-field" value={cab.cant} onChange={(e) => {
-                                                        const newCabinas = (eventForm.cabinaList || []).map((c, i) => i === index ? { ...c, cant: parseInt(e.target.value) || 0 } : c);
-                                                        setEventForm({ ...eventForm, cabinaList: newCabinas });
-                                                    }} />
+                                                    <input type="number" min="0" className="input-field" {...register(`cabinaList.${index}.cant`, { valueAsNumber: true })} />
                                                 </div>
-                                                {(eventForm.cabinaList?.length || 0) > 1 && (
-                                                    <button type="button" onClick={() => {
-                                                        const newCabinas = eventForm.cabinaList.filter((_, i) => i !== index);
-                                                        setEventForm({ ...eventForm, cabinaList: newCabinas });
-                                                    }} className="text-red-400 hover:text-red-600 p-2 mt-1">
+                                                {cabinaFields.length > 1 && (
+                                                    <button type="button" onClick={() => removeCabina(index)} className="text-red-400 hover:text-red-600 p-2 mt-1">
                                                         <X size={16} />
                                                     </button>
                                                 )}
@@ -702,32 +764,23 @@ const AdminEvents = () => {
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <label className="label mb-0">Receptores</label>
-                                            <button type="button" onClick={() => setEventForm({ ...eventForm, receptoresList: [...(eventForm.receptoresList || []), { tipo: 'normales', cant: 50 }] })} className="text-sidebar hover:text-accent transition-colors flex items-center text-xs font-bold">
+                                            <button type="button" onClick={() => appendReceptor({ tipo: 'normales', cant: 50 })} className="text-sidebar hover:text-accent transition-colors flex items-center text-xs font-bold">
                                                 <Plus size={14} className="mr-1" /> Añadir
                                             </button>
                                         </div>
-                                        {eventForm.receptoresList?.map((rec, index) => (
-                                            <div key={`rec-${index}`} className="flex gap-2 items-start relative group">
+                                        {receptoresFields.map((item, index) => (
+                                            <div key={item.id} className="flex gap-2 items-start relative group">
                                                 <div className="flex-1">
-                                                    <select className="input-field" value={rec.tipo} onChange={(e) => {
-                                                        const newRec = (eventForm.receptoresList || []).map((r, i) => i === index ? { ...r, tipo: e.target.value } : r);
-                                                        setEventForm({ ...eventForm, receptoresList: newRec });
-                                                    }}>
+                                                    <select className="input-field" {...register(`receptoresList.${index}.tipo`)}>
                                                         <option value="normales">Normales</option>
                                                         <option value="luminosos">Luminosos</option>
                                                     </select>
                                                 </div>
                                                 <div className="w-20">
-                                                    <input type="number" min="0" className="input-field" value={rec.cant} onChange={(e) => {
-                                                        const newRec = (eventForm.receptoresList || []).map((r, i) => i === index ? { ...r, cant: parseInt(e.target.value) || 0 } : r);
-                                                        setEventForm({ ...eventForm, receptoresList: newRec });
-                                                    }} />
+                                                    <input type="number" min="0" className="input-field" {...register(`receptoresList.${index}.cant`, { valueAsNumber: true })} />
                                                 </div>
-                                                {(eventForm.receptoresList?.length || 0) > 1 && (
-                                                    <button type="button" onClick={() => {
-                                                        const newRec = eventForm.receptoresList.filter((_, i) => i !== index);
-                                                        setEventForm({ ...eventForm, receptoresList: newRec });
-                                                    }} className="text-red-400 hover:text-red-600 p-2 mt-1">
+                                                {receptoresFields.length > 1 && (
+                                                    <button type="button" onClick={() => removeReceptor(index)} className="text-red-400 hover:text-red-600 p-2 mt-1">
                                                         <X size={16} />
                                                     </button>
                                                 )}
@@ -736,7 +789,7 @@ const AdminEvents = () => {
                                     </div>
                                     <div className="sm:col-span-2">
                                         <label className="label">Equipo Extras</label>
-                                        <textarea className="input-field min-h-[60px]" placeholder="Cámaras, micrófonos adicionales, etc." value={eventForm.equipoExtras} onChange={(e) => setEventForm({ ...eventForm, equipoExtras: e.target.value })}></textarea>
+                                        <textarea className="input-field min-h-[60px]" placeholder="Cámaras, micrófonos adicionales, etc." {...register("equipoExtras")}></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -744,7 +797,7 @@ const AdminEvents = () => {
                             <div className="space-y-4">
                                 <div>
                                     <label className="label">Descripción</label>
-                                    <textarea className="input-field min-h-[100px]" placeholder="Detalles del evento, itinerarios..." value={eventForm.descripcion} onChange={(e) => setEventForm({ ...eventForm, descripcion: e.target.value })}></textarea>
+                                    <textarea className="input-field min-h-[100px]" placeholder="Detalles del evento, itinerarios..." {...register("descripcion")}></textarea>
                                 </div>
 
                                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -764,15 +817,15 @@ const AdminEvents = () => {
                                         />
                                         {isUploading && <span className="text-sm text-sidebar font-bold animate-pulse">Subiendo...</span>}
                                     </div>
-                                    {eventForm.archivoAdjunto && (
+                                    {watch("archivoAdjunto") && (
                                         <div className="mt-3 text-sm flex items-center bg-green-50 text-green-700 p-2 rounded-md">
                                             <span className="font-medium mr-2">Archivo adjunto guardado:</span>
-                                            <a href={eventForm.archivoAdjunto.startsWith('http') ? eventForm.archivoAdjunto : `/uploads/${eventForm.archivoAdjunto}`} target="_blank" rel="noreferrer" className="underline hover:text-green-900 truncate max-w-[200px]">
-                                                {eventForm.archivoAdjunto}
+                                            <a href={watch("archivoAdjunto").startsWith('http') ? watch("archivoAdjunto") : `/uploads/${watch("archivoAdjunto")}`} target="_blank" rel="noreferrer" className="underline hover:text-green-900 truncate max-w-[200px]">
+                                                {watch("archivoAdjunto")}
                                             </a>
                                             <button
                                                 type="button"
-                                                onClick={() => setEventForm({ ...eventForm, archivoAdjunto: '' })}
+                                                onClick={() => setValue("archivoAdjunto", '')}
                                                 className="ml-auto text-red-500 hover:text-red-700 font-bold px-2"
                                             >
                                                 [X]
@@ -810,6 +863,7 @@ const AdminEvents = () => {
                                 <div className="w-full md:w-2/5 p-6 border-r border-gray-100 bg-white overflow-y-auto">
                                     <h4 className="font-bold text-gray-800 mb-4">Nueva Asignación</h4>
                                     <form onSubmit={handleAssignSubmit} className="space-y-4">
+                                        {generalError && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-lg">{generalError}</p>}
                                         <div>
                                             <label className="label">Trabajador</label>
                                             <select className="input-field text-sm" required value={assignForm.userId} onChange={(e) => setAssignForm({ ...assignForm, userId: e.target.value })}>
@@ -1415,9 +1469,5 @@ const EventDetailModal = ({ isOpen, onClose, event, assignments, checkIns, onPre
         </div>
     );
 };
-
-const XIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-);
 
 export default AdminEvents;

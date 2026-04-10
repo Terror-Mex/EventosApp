@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
 import dayjs from 'dayjs';
 import { Calendar, Clock, MapPin, DollarSign, Camera, CheckSquare, FileText, Send, Image as ImageIcon, X } from 'lucide-react';
+import {useAuth} from "../../context/AuthContext.jsx";
 
 const WorkerEvents = () => {
+    const { user: currentUser } = useAuth();
     const [previewImg, setPreviewImg] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [assignments, setAssignments] = useState([]);
@@ -39,7 +41,9 @@ const WorkerEvents = () => {
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [checkInLoading, setCheckInLoading] = useState(false);
     const [reportForm, setReportForm] = useState({ contenido: '', photos: [] });
+    const [reportPreviewUrls, setReportPreviewUrls] = useState([]);
     const [reportLoading, setReportLoading] = useState(false);
+    const reportFileInputRef = useRef(null);
 
     useEffect(() => {
         fetchEvents();
@@ -61,7 +65,21 @@ const WorkerEvents = () => {
         setDetailsLoading(true);
         try {
             const res = await api.get(`/worker/events/${eventId}`);
-            setEventDetails(res.data);
+            const data = res.data;
+
+            console.log("ID del Servidor:", data.assignments?.map(a => a.userId));
+            console.log("ID de tu App (currentUser):", currentUser?.id);
+
+            const myAssignment = data.assignments?.find(a => {
+                const serverId = a.user?.id;
+                return String(serverId) === String(currentUser?.id);
+            });
+            console.log("Mi asignación encontrada:", myAssignment);
+            setEventDetails({
+                event: data.event,
+                assignment: myAssignment,
+                myCheckIns: data.myCheckIns || []
+            });
         } catch (error) {
             console.error('Error fetching details', error);
         } finally {
@@ -80,7 +98,10 @@ const WorkerEvents = () => {
             formData.append('contenido', reportForm.contenido);
 
             for (let i = 0; i < reportForm.photos.length; i++) {
-                formData.append('photos', reportForm.photos[i]);
+                const file = reportForm.photos[i];
+                const extension = file.name.split('.').pop();
+                const uniqueName = `evidencia_${Date.now()}_${i}.${extension}`;
+                formData.append('photos', file, uniqueName);
             }
 
             await api.post('/worker/reports', formData, {
@@ -89,6 +110,8 @@ const WorkerEvents = () => {
 
             alert('¡Reporte enviado exitosamente!');
             setReportForm({ contenido: '', photos: [] });
+            setReportPreviewUrls([]);
+            if (reportFileInputRef.current) reportFileInputRef.current.value = '';
             loadEventDetails(eventDetails.event.id);
         } catch (error) {
             console.error('Error submitting report', error);
@@ -104,7 +127,7 @@ const WorkerEvents = () => {
         }
     };
 
-    const handleCheckInOut = async (type, file) => {
+    const handleCheckInOut = async (type, file, fecha) => {
         if (!eventDetails || !file) return;
 
         setCheckInLoading(true);
@@ -129,6 +152,7 @@ const WorkerEvents = () => {
             formData.append('photo', file);
             formData.append('latitud', lat);
             formData.append('longitud', lng);
+            formData.append('fecha', fecha); // Enviar la fecha para evitar problemas de zona horaria
 
             await api.post(`/worker/${type}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -136,16 +160,16 @@ const WorkerEvents = () => {
 
             const typeName = type === 'checkin' ? 'Check-in (Entrada)' : type === 'montaje' ? 'Montaje y Pruebas' : 'Check-out (Salida)';
             alert(`¡${typeName} registrado exitosamente!`);
-            
+
             await loadEventDetails(eventDetails.event.id);
         } catch (error) {
             console.error('Check-in/out error', error);
-            
+
             // Si el error es específicamente de que el trabajador no dio click en Permitir Ubicación
-            if (error.code === 1) { 
+            if (error.code === 1) {
                 alert('BLOQUEO DE GEOCERCA 🛑: No podemos registrar tu asistencia. Necesitamos permiso obligatorio para acceder a tu ubicación GPS y comprobar que estás en la zona del evento.');
             } else {
-                const msg = error.response?.data?.message || (typeof error.response?.data === 'string' ? error.response.data : error.message);
+                const msg = error.response?.data?.error || error.response?.data?.message || (typeof error.response?.data === 'string' ? error.response.data : error.message);
                 alert(`Error al hacer tu registro: ` + msg);
             }
         } finally {
@@ -251,7 +275,7 @@ const WorkerEvents = () => {
                                     <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest border shadow-sm ${eventDetails.event.estado === 'FINALIZADO' ? (isHistoryEvent(eventDetails.event) ? 'bg-gray-200 text-gray-700 border-gray-300' : 'bg-green-100 text-green-800 border-green-200') : (eventDetails.event.estado === 'EN_CURSO' ? 'bg-blue-100 text-blue-800 border-blue-200 shadow-blue-100' : 'bg-yellow-100 text-yellow-800 border-yellow-200')} `}>
                                         {eventDetails.event.estado}
                                     </span>
-                                    <span className="bg-primary text-text text-xs px-2 py-1 rounded-md font-medium">{eventDetails.assignment.rolAsignado}</span>
+                                    <span className="bg-primary text-text text-xs px-2 py-1 rounded-md font-medium">{eventDetails.assignment?.rolAsignado || 'Sin Rol'}</span>
                                 </div>
                             </div>
 
@@ -270,24 +294,30 @@ const WorkerEvents = () => {
                                             <p className="font-semibold text-gray-900 mb-2">Mis Días Asignados</p>
                                             <div className="text-gray-600 text-sm space-y-2">
                                                 {(() => {
+
+                                                    if (!eventDetails?.event || !eventDetails?.assignment) {
+                                                        return <div className="text-gray-400 italic text-xs">Información de asignación no disponible</div>;
+                                                    }
                                                     // Parse assigned days
                                                     let assignedDays = [];
                                                     try {
                                                         if (eventDetails.assignment.diasSeleccionados) {
                                                             assignedDays = JSON.parse(eventDetails.assignment.diasSeleccionados);
                                                         }
-                                                    } catch (e) {}
+                                                    } catch (e) {
+                                                        console.error("Error parseando diasSelecconados", e);
+                                                    }
 
-                                                    try {
+                                                     try {
                                                         if (eventDetails.event.horarios) {
                                                             let hList = JSON.parse(eventDetails.event.horarios);
                                                             // Filter to only assigned days
-                                                            if (assignedDays.length > 0) {
+                                                            if (Array.isArray(assignedDays) && assignedDays.length > 0) {
                                                                 hList = hList.filter(h => assignedDays.includes(h.fecha));
                                                             }
                                                             if (hList && hList.length > 0) {
                                                                 let llegadasMap = {};
-                                                                try { llegadasMap = eventDetails.assignment?.llegadasPorDia ? JSON.parse(eventDetails.assignment.llegadasPorDia) : {}; } catch(e2) {}
+                                                                try { llegadasMap = eventDetails.assignment.llegadasPorDia ? JSON.parse(eventDetails.assignment.llegadasPorDia) : {}; } catch(e2) {}
                                                                 return hList.map((h, i) => (
                                                                     <div key={`w-h-${i}`} className="bg-white border border-gray-100 p-2 text-xs rounded-lg shadow-sm w-full">
                                                                         <div className="font-bold text-gray-800 border-b border-gray-100 pb-1 mb-1">
@@ -302,7 +332,9 @@ const WorkerEvents = () => {
                                                                 ));
                                                             }
                                                         }
-                                                    } catch (e) { }
+                                                    } catch (e) {
+                                                        console.error("Error en bloque de horarios", e);
+                                                     }
                                                     return (
                                                         <div className="bg-white border border-gray-100 p-2 text-xs rounded-lg shadow-sm">
                                                             <div className="grid grid-cols-1 gap-1">
@@ -327,15 +359,15 @@ const WorkerEvents = () => {
                                         <div>
                                             <p className="font-semibold text-gray-900 leading-tight">Pago Asignado</p>
                                             <p className="text-gray-600 tracking-wide font-medium mt-1">
-                                                ${eventDetails.assignment.pagoAsignado} <span className="text-[10px] text-gray-400 font-bold uppercase">/día</span>
+                                                ${eventDetails.assignment?.pagoAsignado} <span className="text-[10px] text-gray-400 font-bold uppercase">/día</span>
                                             </p>
 
-                                            {(eventDetails.assignment.diasAsignados > 1 || eventDetails.assignment.pagoExtras > 0) && (
+                                            {(eventDetails.assignment?.diasAsignados > 1 || eventDetails.assignment?.pagoExtras > 0) && (
                                                 <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
                                                     {eventDetails.assignment.diasAsignados > 1 && (
                                                         <div className="flex justify-between text-[11px] text-gray-500 font-medium">
-                                                            <span>Base ({eventDetails.assignment.diasAsignados} días):</span>
-                                                            <span>${(eventDetails.assignment.pagoAsignado * eventDetails.assignment.diasAsignados).toFixed(2)}</span>
+                                                            <span>Base ({eventDetails.assignment?.diasAsignados} días):</span>
+                                                            <span>${(eventDetails.assignment?.pagoAsignado * eventDetails.assignment.diasAsignados).toFixed(2)}</span>
                                                         </div>
                                                     )}
                                                     {eventDetails.assignment.pagoExtras > 0 && (
@@ -394,8 +426,16 @@ const WorkerEvents = () => {
                                                 if (Array.isArray(d)) return `${d[0]}-${d[1].toString().padStart(2, '0')}-${d[2].toString().padStart(2, '0')}`;
                                                 return d;
                                             };
-                                            const currentCiList = eventDetails.checkIns || (eventDetails.checkIn ? [eventDetails.checkIn] : []);
-                                            const dayCi = currentCiList.find(c => normalizeDate(c.fecha) === normalizeDate(h.fecha)) || {};
+
+                                            // DESPUÉS (busca el check-in que corresponde a este día específico):
+                                            const dayCi = eventDetails.myCheckIns?.find(ci => {
+                                                let ciDate = ci.fecha;
+                                                if (Array.isArray(ciDate)) {
+                                                    ciDate = `${ciDate[0]}-${String(ciDate[1]).padStart(2, '0')}-${String(ciDate[2]).padStart(2, '0')}`;
+                                                }
+                                                return ciDate === h.fecha;
+                                            }) || {};
+
                                             const isToday = h.fecha === dayjs().format('YYYY-MM-DD');
                                             const horaLlegadaDia = llegadasMap[h.fecha] || eventDetails.assignment?.horaLlegada || h.llegada || null;
 
@@ -442,7 +482,7 @@ const WorkerEvents = () => {
                                                                                     disabled={checkInLoading}
                                                                                     onClick={(e) => { e.target.value = null; }}
                                                                                     onChange={(e) => {
-                                                                                        if (e.target.files?.[0]) handleCheckInOut('checkin', e.target.files[0]);
+                                                                                        if (e.target.files?.[0]) handleCheckInOut('checkin', e.target.files[0], h.fecha);
                                                                                     }}
                                                                                 />
                                                                             </label>
@@ -472,7 +512,7 @@ const WorkerEvents = () => {
                                                                                                 className="hidden"
                                                                                                 onClick={(e) => { e.target.value = null; }}
                                                                                                 onChange={(e) => {
-                                                                                                    if (e.target.files?.[0]) handleCheckInOut('montaje', e.target.files[0]);
+                                                                                                    if (e.target.files?.[0]) handleCheckInOut('montaje', e.target.files[0], h.fecha);
                                                                                                 }}
                                                                                             />
                                                                                         )}
@@ -503,7 +543,7 @@ const WorkerEvents = () => {
                                                                                         className="hidden"
                                                                                         onClick={(e) => { e.target.value = null; }}
                                                                                         onChange={(e) => {
-                                                                                            if (e.target.files?.[0]) handleCheckInOut('checkout', e.target.files[0]);
+                                                                                            if (e.target.files?.[0]) handleCheckInOut('checkout', e.target.files[0], h.fecha);
                                                                                         }}
                                                                                     />
                                                                                 )}
@@ -633,25 +673,77 @@ const WorkerEvents = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
-                                            <ImageIcon size={16} className="mr-2" /> Adjuntar Fotos (Opcional)
+                                            <ImageIcon size={16} className="mr-2" /> Evidencia Fotográfica (Máx. 3 fotos)
                                         </label>
-                                        <input
-                                            type="file"
-                                            multiple
-                                            accept="image/*"
-                                            className="block w-full text-sm text-gray-500
-                                                    file:mr-4 file:py-2 file:px-4
-                                                    file:rounded-full file:border-0
-                                                    file:text-sm file:font-semibold
-                                                    file:bg-sidebar/10 file:text-sidebar
-                                                    hover:file:bg-sidebar/20 cursor-pointer"
-                                            onChange={handleReportPhotosChange}
-                                        />
-                                        {reportForm.photos.length > 0 && (
-                                            <p className="text-xs text-sidebar mt-2 flex items-center font-semibold bg-success/30 px-2 py-1 rounded inline-flex border border-success/40">
-                                                ✅ {reportForm.photos.length} fotos seleccionadas
-                                            </p>
-                                        )}
+                                        
+                                        <div className={`mt-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all ${reportPreviewUrls.length > 0 ? 'border-accent bg-accent/5' : 'border-gray-300 hover:border-accent bg-gray-50'}`}>
+                                            {reportPreviewUrls.length > 0 && (
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full mb-4">
+                                                    {reportPreviewUrls.map((url, idx) => (
+                                                        <div key={idx} className="relative group">
+                                                            <img src={url} alt={`Preview ${idx + 1}`} className="h-32 w-full object-cover rounded-lg shadow-md border border-white" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newFiles = [...reportForm.photos];
+                                                                    const newUrls = [...reportPreviewUrls];
+                                                                    newFiles.splice(idx, 1);
+                                                                    newUrls.splice(idx, 1);
+                                                                    setReportForm({ ...reportForm, photos: newFiles });
+                                                                    setReportPreviewUrls(newUrls);
+                                                                }}
+                                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg hover:bg-red-600 z-10"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {reportPreviewUrls.length < 3 && (
+                                                <div 
+                                                    onClick={() => reportFileInputRef.current && reportFileInputRef.current.click()}
+                                                    className="flex flex-col items-center cursor-pointer w-full py-4 relative hover:opacity-80"
+                                                >
+                                                    <div className="bg-white p-4 rounded-full shadow-sm text-sidebar mb-3 border border-gray-100">
+                                                        <Camera size={28} />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-sidebar text-center mb-1">Elegir archivos / Tomar foto</span>
+                                                    <span className="text-xs text-gray-400">Archivos actuales: {reportForm.photos.length} (quedan {3 - reportForm.photos.length})</span>
+                                                    <span className="text-xs text-gray-400 mt-1">Máximo 5MB (JPG, PNG)</span>
+                                                </div>
+                                            )}
+
+                                            <input
+                                                ref={reportFileInputRef}
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                multiple
+                                                capture="environment"
+                                                onChange={(e) => {
+                                                    if (!e.target.files || e.target.files.length === 0) return;
+                                                    const newFilesArray = Array.from(e.target.files);
+                                                    
+                                                    if (reportForm.photos.length + newFilesArray.length > 3) {
+                                                        alert('Puedes subir un máximo de 3 fotos en total.');
+                                                        e.target.value = '';
+                                                        return;
+                                                    }
+                                                    
+                                                    const urls = newFilesArray.map(f => URL.createObjectURL(f));
+                                                    
+                                                    const combinedFiles = [...reportForm.photos, ...newFilesArray];
+                                                    const combinedUrls = [...reportPreviewUrls, ...urls];
+                                                    
+                                                    setReportForm({ ...reportForm, photos: combinedFiles });
+                                                    setReportPreviewUrls(combinedUrls);
+                                                    
+                                                    e.target.value = '';
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                     <button
                                         type="submit"

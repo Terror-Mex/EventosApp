@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Edit2, UserCheck, UserX, Trash2, AlertCircle, ChevronDown, ChevronRight, User as UserIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
 const AdminStaff = () => {
     const { user: currentUser } = useAuth();
@@ -12,10 +13,14 @@ const AdminStaff = () => {
     const [editingId, setEditingId] = useState(null);
     const [collapsedGroups, setCollapsedGroups] = useState({});
 
+    const { register, handleSubmit, setError,setValue,watch, formState: { errors }, reset } = useForm();
+    const [generalError, setGeneralError] = useState('');
+
     const [form, setForm] = useState({
         nombre: '', email: '', password: '', rol: 'WORKER',
-        telefono: '', puesto: '', activo: true
+        telefono: '', puesto: '', activo: false
     });
+    const rolActual = watch("rol", "WORKER");
 
     useEffect(() => {
         fetchStaff();
@@ -34,35 +39,51 @@ const AdminStaff = () => {
     };
 
     const openModal = (user = null) => {
+        reset();
+        setGeneralError('');
         if (user) {
             setForm({ ...user, password: '' });
+            setValue("activo", user.activo);
+            setValue("rol", user.rol);
             setEditingId(user.id);
         } else {
             setForm({
                 nombre: '', email: '', password: '', rol: 'WORKER',
                 telefono: '', puesto: '', activo: true
             });
+            setValue("activo", true)
+            setValue("rol", "WORKER")
             setEditingId(null);
         }
         setIsModalOpen(true);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const onSubmit = async (data) => {
+        setGeneralError('');
         try {
+            const payload = { ...data };
+            if (editingId && !payload.password) {
+                delete payload.password;
+            }
+
             if (editingId) {
-                // If password is empty, don't send it so it's not updated
-                const payload = { ...form };
-                if (!payload.password) delete payload.password;
                 await api.put(`/admin/staff/${editingId}`, payload);
             } else {
-                await api.post('/admin/staff', form);
+                await api.post('/admin/staff', payload);
             }
             setIsModalOpen(false);
             fetchStaff();
         } catch (error) {
-            console.error('Error saving staff', error);
-            alert('Error al guardar trabajador');
+            const errData = error.response?.data;
+            if (errData?.errors) {
+                Object.keys(errData.errors).forEach(key => {
+                    setError(key, { type: 'manual', message: errData.errors[key] });
+                });
+            } else if (errData?.error) {
+                setGeneralError(errData.error);
+            } else {
+                setGeneralError('Ocurrió un error inesperado.');
+            }
         }
     };
 
@@ -146,7 +167,6 @@ const AdminStaff = () => {
                                 return Object.entries(grouped).map(([groupName, users]) => {
                                     if (users.length === 0) return null;
                                     
-                                    // Add specific colors based on the group matching the app's palette
                                     let colorClass = "bg-slate-50 text-slate-500 border-l-4 border-l-slate-300";
                                     if (groupName === 'Administradores') colorClass = "bg-sidebar/5 text-sidebar border-l-4 border-l-sidebar";
                                     if (groupName === 'Técnicos') colorClass = "bg-accent/10 text-accent border-l-4 border-l-accent";
@@ -273,34 +293,38 @@ const AdminStaff = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                        <form noValidate onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+                            {generalError && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-lg">{generalError}</p>}
                             <div>
                                 <label className="label">Nombre Completo</label>
-                                <input type="text" className="input-field" required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+                                <input type="text" className="input-field" {...register("nombre")} defaultValue={form.nombre} />
+                                {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Email</label>
-                                    <input type="email" className="input-field" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                                    <input type="email" className="input-field" {...register("email")} defaultValue={form.email} />
+                                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                                 </div>
                                 <div>
                                     <label className="label">Contraseña {editingId && <span className="text-xs font-normal text-gray-400">(Dejar en blanco para no cambiar)</span>}</label>
-                                    <input type="password" className="input-field" required={!editingId} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                                    <input type="password" className="input-field" {...register("password")} />
+                                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Teléfono</label>
-                                    <input type="text" className="input-field" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+                                    <input type="text" className="input-field" {...register("telefono")} defaultValue={form.telefono} />
                                 </div>
                                 <div>
                                     <label className="label">Rol del Sistema</label>
                                     <select
                                         className={`input-field ${editingId === currentUser.id ? 'bg-gray-100 cursor-not-allowed opacity-70' : ''}`}
-                                        value={form.rol}
-                                        onChange={(e) => setForm({ ...form, rol: e.target.value })}
+                                        {...register("rol")}
+                                        defaultValue={form.rol}
                                         disabled={editingId === currentUser.id}
                                     >
                                         <option value="WORKER">Trabajador</option>
@@ -314,19 +338,19 @@ const AdminStaff = () => {
                                 </div>
                             </div>
 
-                            {form.rol !== 'ADMIN' && (
+                            {rolActual !== 'ADMIN' &&
                                 <div>
                                     <label className="label">Puesto o Especialidad</label>
-                                    <select className="input-field" value={form.puesto} onChange={(e) => setForm({ ...form, puesto: e.target.value })}>
+                                    <select className="input-field" {...register("puesto")} defaultValue={form.puesto}>
                                         <option value="">-- Seleccionar --</option>
                                         <option value="Técnico">Técnico</option>
                                         <option value="Staff">Staff</option>
                                         <option value="Intérprete">Intérprete</option>
                                     </select>
-                                </div>
-                            )}
+                                </div>}
 
                             <div className="flex justify-end pt-4 space-x-3">
+                                <input type="hidden" {...register("activo")} />
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancelar</button>
                                 <button type="submit" className="btn-primary">{editingId ? 'Guardar Cambios' : 'Registrar Trabajador'}</button>
                             </div>

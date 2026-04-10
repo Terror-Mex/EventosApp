@@ -52,10 +52,16 @@ export const AuthProvider = ({ children }) => {
         return userData;
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-        window.location.href = '/login';
+    const logout = async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout request failed', error);
+        } finally {
+            localStorage.removeItem('token');
+            setUser(null);
+            window.location.href = '/login';
+        }
     };
 
     const updateUser = (data) => {

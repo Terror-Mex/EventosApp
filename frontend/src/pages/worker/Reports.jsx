@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import dayjs from 'dayjs';
-import { Camera, Send, FileText, CheckCircle2 } from 'lucide-react';
+import { Camera, Send, FileText, CheckCircle2, Search } from 'lucide-react';
 
 const WorkerReports = () => {
     const [reports, setReports] = useState([]);
@@ -13,8 +13,9 @@ const WorkerReports = () => {
     // Form State
     const [selectedEventId, setSelectedEventId] = useState('');
     const [content, setContent] = useState('');
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [previewUrls, setPreviewUrls] = useState([]);
+    const fileInputRef = React.useRef(null);
 
     useEffect(() => {
         fetchData();
@@ -46,9 +47,12 @@ const WorkerReports = () => {
             formData.append('eventId', selectedEventId);
             formData.append('contenido', content);
 
-            if (selectedFile) {
-                formData.append('photos', selectedFile);
-            }
+            selectedFiles.forEach((file, index) => {
+                // Generar un nombre único para evitar que el backend (o el navergador) los sobrescriba si se llaman igual
+                const extension = file.name.split('.').pop();
+                const uniqueName = `evidencia_${Date.now()}_${index}.${extension}`;
+                formData.append('photos', file, uniqueName);
+            });
 
             await api.post('/worker/reports', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -57,8 +61,9 @@ const WorkerReports = () => {
             setSuccessMsg('Reporte enviado correctamente.');
             setContent('');
             setSelectedEventId('');
-            setSelectedFile(null);
-            setPreviewUrl(null);
+            setSelectedFiles([]);
+            setPreviewUrls([]);
+            if (fileInputRef.current) fileInputRef.current.value = '';
             fetchData(); // reload reports
 
             setTimeout(() => setSuccessMsg(''), 5000);
@@ -120,41 +125,77 @@ const WorkerReports = () => {
                     </div>
 
                     <div className="relative">
-                        <label className="label">Evidencia Fotográfica</label>
-                        <div className={`mt-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all ${previewUrl ? 'border-accent bg-accent/5' : 'border-gray-300 hover:border-accent bg-gray-50'}`}>
-                            {previewUrl ? (
-                                <div className="space-y-4 w-full">
-                                    <img src={previewUrl} alt="Preview" className="max-h-48 mx-auto rounded-lg shadow-md border border-white" />
-                                    <button
-                                        type="button"
-                                        onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
-                                        className="text-xs text-red-500 font-bold uppercase tracking-wider block mx-auto hover:underline"
-                                    >
-                                        Quitar foto
-                                    </button>
+                        <label className="label">Evidencia Fotográfica (Máx. 3 fotos)</label>
+                        <div className={`mt-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all ${previewUrls.length > 0 ? 'border-accent bg-accent/5' : 'border-gray-300 hover:border-accent bg-gray-50'}`}>
+                            {previewUrls.length > 0 && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full mb-4">
+                                    {previewUrls.map((url, idx) => (
+                                        <div key={idx} className="relative group">
+                                            <img src={url} alt={`Preview ${idx + 1}`} className="h-32 w-full object-cover rounded-lg shadow-md border border-white" />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newFiles = [...selectedFiles];
+                                                    const newUrls = [...previewUrls];
+                                                    newFiles.splice(idx, 1);
+                                                    newUrls.splice(idx, 1);
+                                                    setSelectedFiles(newFiles);
+                                                    setPreviewUrls(newUrls);
+                                                }}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg hover:bg-red-600 z-10"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ) : (
-                                <label className="flex flex-col items-center cursor-pointer w-full h-full py-4">
+                            )}
+
+                            {previewUrls.length < 3 && (
+                                <div 
+                                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                                    className="flex flex-col items-center cursor-pointer w-full py-4 relative hover:opacity-80"
+                                >
                                     <div className="bg-white p-4 rounded-full shadow-sm text-sidebar mb-3 border border-gray-100">
                                         <Camera size={28} />
                                     </div>
-                                    <span className="text-sm font-bold text-gray-700">Tocar para tomar o seleccionar foto</span>
+                                    <span className="text-sm font-bold text-sidebar text-center mb-1">Elegir archivos / Tomar foto</span>
+                                    <span className="text-xs text-gray-400">Archivos actuales: {selectedFiles.length} (quedan {3 - selectedFiles.length})</span>
                                     <span className="text-xs text-gray-400 mt-1">Máximo 5MB (JPG, PNG)</span>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        capture="environment"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                setSelectedFile(file);
-                                                setPreviewUrl(URL.createObjectURL(file));
-                                            }
-                                        }}
-                                    />
-                                </label>
+                                </div>
                             )}
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                multiple
+                                capture="environment"
+                                onChange={(e) => {
+                                    if (!e.target.files || e.target.files.length === 0) return;
+                                    const newFilesArray = Array.from(e.target.files);
+                                    
+                                    // Make sure we never exceed 3
+                                    if (selectedFiles.length + newFilesArray.length > 3) {
+                                        alert('Puedes subir un máximo de 3 fotos en total.');
+                                        e.target.value = ''; // clear input
+                                        return;
+                                    }
+                                    
+                                    const urls = newFilesArray.map(f => URL.createObjectURL(f));
+                                    
+                                    // Secure, synchronous concatenation
+                                    const combinedFiles = [...selectedFiles, ...newFilesArray];
+                                    const combinedUrls = [...previewUrls, ...urls];
+                                    
+                                    setSelectedFiles(prev => [...prev, ...newFilesArray]);
+                                    setPreviewUrls(prev=> [...prev, ...urls]);
+                                    
+                                    // Always clear input so same file can be selected again if removed
+                                    e.target.value = '';
+                                }}
+                            />
                         </div>
                     </div>
 
@@ -183,13 +224,16 @@ const WorkerReports = () => {
                         {reports.map((report) => (
                             <div key={report.id} className="card bg-white p-5 hover:border-gray-300 transition-colors">
                                 <div className="flex justify-between items-start mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-bold text-gray-900">{report.event.nombre}</h3>
-                                        {report.event.numeroEvento && (
-                                            <span className="bg-gray-100 border border-gray-200 text-gray-600 text-[9px] px-1.5 py-0.5 rounded font-bold tracking-widest uppercase mt-0.5">
-                                                #{report.event.numeroEvento}
-                                            </span>
-                                        )}
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-gray-900">{report.event.nombre}</h3>
+                                            {report.event.numeroEvento && (
+                                                <span className="bg-gray-100 border border-gray-200 text-gray-600 text-[9px] px-1.5 py-0.5 rounded font-bold tracking-widest uppercase mt-0.5">
+                                                    #{report.event.numeroEvento}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs text-gray-500 mt-1">Reportado por: <strong>{report.user?.nombre || 'Usuario Desconocido'}</strong></span>
                                     </div>
                                     <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md ml-2 flex-shrink-0">
                                         {dayjs(report.fechaCreacion).format('DD MMM YYYY, HH:mm')}
@@ -199,9 +243,31 @@ const WorkerReports = () => {
                                     {report.contenido}
                                 </p>
                                 {report.fotos?.length > 0 && (
-                                    <div className="flex items-center gap-2 text-sidebar text-xs font-bold bg-sidebar/10 w-fit px-3 py-1.5 rounded-lg border border-sidebar/20 shadow-sm">
-                                        <Camera size={14} />
-                                        <span>{report.fotos.length} foto(s) adjunta(s)</span>
+                                    <div className="mt-4">
+                                        <div className="flex items-center gap-2 text-sidebar text-xs font-bold mb-3">
+                                            <Camera size={14} />
+                                            <span>{report.fotos.length} foto(s) adjunta(s)</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {report.fotos.map((foto, idx) => (
+                                                <div key={idx} className="group relative w-24 h-24 sm:w-32 sm:h-32 bg-gray-200 rounded-lg overflow-hidden border border-gray-300 flex-shrink-0">
+                                                    <img
+                                                        src={foto.rutaArchivo}
+                                                        alt={foto.nombreOriginal || `Evidencia ${idx + 1}`}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%23cbd5e1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                        <a href={foto.rutaArchivo} target="_blank" rel="noopener noreferrer" className="text-white bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70">
+                                                            <Search size={16} />
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>

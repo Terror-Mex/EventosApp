@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "checkins")
@@ -43,4 +44,10 @@ public class CheckIn {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "foto_salida_id")
     private Photo fotoSalida;
+
+    public CheckIn(User user, Event event) {
+        this.user = user;
+        this.event = event;
+        this.fecha = LocalDate.now(ZoneId.of("America/Mexico_City"));
+    }
 }

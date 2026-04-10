@@ -8,7 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class FileStorageService {
 
@@ -25,7 +27,7 @@ public class FileStorageService {
                 "api_secret", apiSecret,
                 "secure", true
         ));
-        System.out.println("Cloudinary configurado para cloud: " + cloudName);
+        log.info("Cloudinary configurado para cloud: {}", cloudName);
     }
 
     /**
@@ -33,12 +35,12 @@ public class FileStorageService {
      */
     public String storeFile(MultipartFile file) {
         try {
-            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "folder", "eventpro",
                     "resource_type", "auto"
             ));
             String secureUrl = (String) uploadResult.get("secure_url");
-            System.out.println(">>> Archivo subido a Cloudinary: " + secureUrl);
+            log.info(">>> Archivo subido a Cloudinary: {}", secureUrl);
             return secureUrl;
         } catch (IOException ex) {
             throw new RuntimeException("Error al subir archivo a Cloudinary: " + ex.getMessage(), ex);
@@ -56,16 +58,15 @@ public class FileStorageService {
                 cloudinary.uploader().destroy(publicId, ObjectUtils.asMap(
                         "resource_type", "image"
                 ));
-                System.out.println(">>> Archivo eliminado de Cloudinary: " + publicId);
+                log.info(">>> Archivo eliminado de Cloudinary: {}", publicId);
             }
         } catch (Exception ex) {
-            System.err.println("Error al eliminar archivo de Cloudinary: " + fileUrlOrPublicId + " - " + ex.getMessage());
+            log.error("Error al eliminar archivo de Cloudinary: {} - {}", fileUrlOrPublicId,  ex.getMessage());
         }
     }
 
     /**
      * Extrae el public_id de una URL de Cloudinary.
-     * Ejemplo URL: https://res.cloudinary.com/demo/image/upload/v1234/eventpro/abc123.jpg
      * Public ID: eventpro/abc123
      */
     private String extractPublicId(String url) {
@@ -75,7 +76,7 @@ public class FileStorageService {
         if (!url.startsWith("http")) {
             // Manejar rutas legacy locales (/uploads/filename.jpg)
             if (url.startsWith("/uploads/")) {
-                System.out.println(">>> Archivo local legacy ignorado (no está en Cloudinary): " + url);
+                log.info(">>> Archivo local legacy ignorado (no está en Cloudinary): {}", url);
                 return null;
             }
             return url;
@@ -102,7 +103,7 @@ public class FileStorageService {
             
             return afterUpload;
         } catch (Exception e) {
-            System.err.println("Error al extraer public_id de URL: " + url);
+            log.error("Error al extraer public_id de URL: {}", url);
             return null;
         }
     }

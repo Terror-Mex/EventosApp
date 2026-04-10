@@ -1,3 +1,0 @@
-200 {"user":{"id":2,"puesto":"Técnico de Audio","nombre":"Carlos Técnico","email":"carlos@eventpro.com","rol":"WORKER"},"token":"eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiV09SS0VSIiwidXNlcklkIjoyLCJzdWIiOiJjYXJsb3NAZXZlbnRwcm8uY29tIiwiaWF0IjoxNzcyODQ2ODU3LCJleHAiOjE3NzI5MzMyNTd9.cchge9BGRC51piOBmisSXM5cBLw5uwCuhDtaKCQ80fObsCks_uRrVo5y5gKSVguo"}
-Checkin: 400 Already checked in
-Montaje: 400 Montaje-Pruebas ya registrado

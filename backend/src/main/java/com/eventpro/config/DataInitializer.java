@@ -7,7 +7,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
 public class DataInitializer {
 
@@ -40,11 +42,11 @@ public class DataInitializer {
                 admin.setPuesto("Administrador");
                 admin.setActivo(true);
                 userRepository.save(admin);
+
+                log.info("=========================================");
+                log.info("ADMIN SEMILLA CREADO: {}", safeEmail);
+                log.info("=========================================");
                 
-                System.out.println("===========================================");
-                System.out.println("  ADMIN SEMILLA CREADO (NUEVO)");
-                System.out.println("  Email: " + safeEmail);
-                System.out.println("===========================================");
             } else {
                 // Si ya existe, FORZAR la actualización del password y nombre por si cambiaron en Railway
                 User admin = adminOpt.get();
@@ -52,10 +54,9 @@ public class DataInitializer {
                 admin.setPassword(passwordEncoder.encode(safePassword));
                 userRepository.save(admin);
                 
-                System.out.println("===========================================");
-                System.out.println("  ADMIN SEMILLA ACTUALIZADO (EXISTENTE)");
-                System.out.println("  Password sincronizado con tus variables de entorno");
-                System.out.println("===========================================");
+                log.info("=========================================");
+                log.info("ADMIN SEMILLA ACTUALIZADO - password sincronizado");
+                log.info("========================================="); 
             }
         };
     }

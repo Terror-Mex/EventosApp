@@ -9,7 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@RequiredArgsConstructor
+@Slf4j
 @Service
 public class CleanupService {
 
@@ -19,21 +23,11 @@ public class CleanupService {
     private final AssignmentRepository assignmentRepository;
     private final FileStorageService fileStorageService;
 
-    public CleanupService(EventRepository eventRepository, CheckInRepository checkInRepository,
-                          ReportRepository reportRepository, AssignmentRepository assignmentRepository,
-                          FileStorageService fileStorageService) {
-        this.eventRepository = eventRepository;
-        this.checkInRepository = checkInRepository;
-        this.reportRepository = reportRepository;
-        this.assignmentRepository = assignmentRepository;
-        this.fileStorageService = fileStorageService;
-    }
-
     // Ejecuta cada lunes a las 2:00 AM (borrado semanal)
     @Scheduled(cron = "0 0 2 ? * MON")
     @Transactional
     public void cleanupOldData() {
-        System.out.println(">>> EJECUTANDO TAREA DE LIMPIEZA SEMANAL (Cloudinary + DB)...");
+        log.info(">>> EJECUTANDO TAREA DE LIMPIEZA SEMANAL (Cloudinary + DB)...");
         LocalDate hoy = LocalDate.now();
         List<Event> eventos = eventRepository.findAll();
 
@@ -82,10 +76,10 @@ public class CleanupService {
 
                 // Finalmente borrar el evento
                 eventRepository.delete(event);
-                System.out.println(">> EVENTO PASADO " + event.getNumeroEvento() + " ELIMINADO POR ANTIGUEDAD (+60 DIAS)");
+                log.info(">> EVENTO PASADO {} {}", event.getNumeroEvento() ," ELIMINADO POR ANTIGUEDAD (+60 DIAS)");
             }
         }
-        System.out.println(">>> TAREA DE LIMPIEZA COMPLETADA.");
+        log.info(">>> TAREA DE LIMPIEZA COMPLETADA.");
     }
 
     // Ejecuta cada 5 minutos

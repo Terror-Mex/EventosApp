@@ -14,4 +14,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByUser(User user);
     List<Assignment> findByEvent(Event event);
     Optional<Assignment> findByUserAndEvent(User user, Event event);
+    void deleteByEventId(Long id);
+    Long countByUser(User user);
 }
+

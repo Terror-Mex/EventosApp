@@ -13,8 +13,10 @@ import java.time.LocalDate;
 @Repository
 public interface CheckInRepository extends JpaRepository<CheckIn, Long> {
     Optional<CheckIn> findByUserAndEventAndFecha(User user, Event event, LocalDate fecha);
-    Optional<CheckIn> findByUserAndEvent(User user, Event event);
+    List<CheckIn> findByUserAndEvent(User user, Event event);
     List<CheckIn> findAllByUserAndEvent(User user, Event event);
     List<CheckIn> findByUser(User user);
     List<CheckIn> findByEvent(Event event);
+    Long countByUser(User user);
+
 }

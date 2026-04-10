@@ -11,8 +11,10 @@ import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
+@Slf4j
 public class FirebaseConfig {
 
     // Variable para Railway: El contenido completo del archivo JSON pegado aquí
@@ -51,10 +53,10 @@ public class FirebaseConfig {
                         .build();
 
                 FirebaseApp.initializeApp(options);
-                System.out.println("Firebase Admin SDK properly initialized!");
+                log.info("Firebase Admin SDK properly initialized!");
             }
         } catch (IOException e) {
-            System.err.println("Firebase App initialization Error: " + e.getMessage());
+            log.error("Firebase App initialization Error: {}", e.getMessage());
         }
     }
 }

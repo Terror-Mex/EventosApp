@@ -4,7 +4,9 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class FcmService {
 
@@ -35,9 +37,9 @@ public class FcmService {
                     .build();
 
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Push notification successfully sent: " + response);
+            log.info("Push notification successfully sent: {}", response);
         } catch (Exception e) {
-            System.err.println("Error sending push notification via FCM: " + e.getMessage());
+            log.error("Error sending push notification via FCM: {}", e.getMessage());
         }
     }
 }

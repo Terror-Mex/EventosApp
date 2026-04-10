@@ -36,4 +36,10 @@ public class Report {
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "report_id")
     private List<Photo> fotos = new ArrayList<>();
+
+    public Report(User user, Event event, String contenido) {
+        this.user = user;
+        this.event = event;
+        this.contenido = contenido;
+    }
 }
