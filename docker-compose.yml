@@ -1,0 +1,72 @@
+
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: eventpro_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-eventpro}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-eventpro123}
+      POSTGRES_DB: ${DB_NAME:-eventpro}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-eventpro} -d ${DB_NAME:-eventpro}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - eventpro-net
+    restart: unless-stopped
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eventpro_backend
+    environment:
+      - SERVER_PORT=8080
+      - DB_URL=jdbc:postgresql://database:5432/${DB_NAME:-eventpro}
+      - DB_USERNAME=${DB_USER:-eventpro}
+      - DB_PASSWORD=${DB_PASSWORD:-eventpro123}
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+      - JPA_DDL_AUTO=update
+      - JWT_SECRET=${JWT_SECRET:-changeme_this_is_not_secure_at_all_minimum_64_chars}
+      - JWT_EXPIRATION_MS=${JWT_EXPIRATION_MS:-86400000}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@eventpro.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+      # Si necesitas usar variables para firebase, puedes quitar el comentario
+      # - FIREBASE_CREDENTIALS=${FIREBASE_CREDENTIALS:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - eventpro-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eventpro_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - eventpro-net
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  eventpro-net:
+    driver: bridge
